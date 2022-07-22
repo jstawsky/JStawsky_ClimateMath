@@ -1,0 +1,219 @@
+---
+title: "&nbsp;"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+<center><h1>R Code for Climate Mathematics:</h1></center>
+<center><h1>Theory and Applications</h1></center>
+<p>&nbsp;</p>
+<center><h3>A Cambridge University Press book By</h3></center>
+<center><h3>SSP Shen and RCJ Somerville</h3></center>
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+<div align="center">Version 1.0 released in July 2019 and coded by Dr. Samuel Shen, Distinguished Professor</div>
+<div align="center">San Diego State University, California, USA</div> 
+<div align="center"><https://shen.sdsu.edu></div> 
+<div align="center">Email: <sshen@sdsu.edu></div> 
+<p>&nbsp;</p>
+<div align="center">Version 2.0 compiled and updated by Momtaza Sayd</div> 
+<div align="center">San Diego State University May 2021</div>
+<div align="center">Version 3.0 compiled and updated by Joaquin Stawsky</div>
+<div align="center">San Diego State University June 2022</div>
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+## Chapter 5: Energy Balance Models Energy Balance Models for Climate
+
+### Plot Fig. 5.2
+```{r,fig.width=8, fig.height=6}
+#NASA Diviner Data Source:
+#http://pds-geosciences.wustl.edu/lro/lro-l-dlre-4-rdr-v1/lrodlr_1001/data/gcp/
+setwd("~/sshen/climmath")
+d19 <- read.table("data/tbol_snapshot.pbin4d-19.out-180-0.txt",header = FALSE)
+dim(d19)
+#[1] 259200      3  #259200 grid points at 0.5 lat-lon resolution
+#259200=720*360, starting from (-179.75, -89.75) going north
+#then back to south pole then going north until the end (179.75, 89.75)
+m19 <- matrix(d19[,3],nrow = 360)
+dim(m19)
+
+library(maps)
+Lat1 <- seq(-89.75,by = 0.5,len = 360)
+Lon1 <- seq(-189.75,by = 0.5, len = 720)
+mapmat <- t(m19)
+# mapmat <- pmin(mapmat,10)
+# mapmat <- mapmat[,seq(length(mapmat[1,]),1)]#, no flipping
+#plot.new()
+#png(filename = paste("Moon Surface Temperature, Snapshot=", 19,".png"), 
+#    width = 800, height = 400)
+int <- seq(0,400,length.out = 40)
+rgb.palette <- colorRampPalette(c('skyblue',  'green', 'blue', 'yellow', 'orange', 
+                               'pink','red', 'maroon', 'purple', 'black'),interpolate = 'spline')
+filled.contour(Lon1, Lat1, mapmat, color.palette = rgb.palette, levels = int,
+               plot.title = title("Moon Surface Temperature Observed by NASA Diviner,\n Snapshot 19", 
+                                xlab = "Longitude", ylab = "Latitude"
+                                ,cex.lab = 1.2,cex.axis = 1.2),
+               plot.axes = {axis(1); axis(2);grid()},
+               key.title = title(main = "K"))
+#dev.off()
+```
+
+
+<p>&nbsp;</p>
+### Plot the equator temperature for a snapshot
+```{r}
+#plot.new()
+#png(filename = paste("Moon's Equatorial Temperature at Snapshot", 19,".png"), 
+#    width = 600, height = 400)
+plot(Lon1,m19[180,],type = "l", col = "red",lwd = 2, 
+     xlab = "Longitude", ylab = "Temperature [K]",
+     main = "Moon's Equatorial Temperature at Snapshot 19"
+     ,cex.lab = 1.2,cex.axis = 1.2)
+text(-100,250,"Nighttime",cex = 2)
+text(80,250,"Daytime",cex = 2, col = "orange")
+#dev.off()
+```
+
+<p>&nbsp;</p>
+### Plot the noon time meridional temperature for a snapshot
+```{r}
+#plot.new()
+par(mar = c(3.5,4,2,0.5))
+#png(filename = paste("Moon's Noon Time Meridional Temperature at Snapshot", 19,".png"), 
+#    width = 600, height = 400)
+plot(Lat1,m19[,540],type = "l", col = "red",lwd = 2, 
+     xlab = "Latitude", ylab = "Temperature [K]",
+     main = "Moon's Noon Time Meridional Temperature at Snapshot 19",
+     cex.lab = 1.2,cex.axis = 1.2)
+#dev.off()
+```
+
+<p>&nbsp;</p>
+### Compute the bright side average temperature of the moon
+```{r}
+bt <- d19[129601:259200,]
+aw <- cos(bt[,2]*pi/180)
+wbt <- bt[,3]*aw
+bta <- sum(wbt)/sum(aw)
+bta
+```
+
+<p>&nbsp;</p>
+### Compute the dark side average temperature
+```{r}
+dt <- d19[0:12960,]
+aw <- cos(dt[,2]*pi/180)
+wdt <- dt[,3]*aw
+dta <- sum(wdt)/sum(aw)
+dta
+```
+
+<p>&nbsp;</p>
+### Equator noon temperature of the moon from an EBM
+```{r}
+lat <- 0*pi/180
+sigma <- 5.670367*10^(-8)
+alpha <- 0.12 
+S <- 1368
+ep <- 0.98
+k <- 7.4*10^(-4)
+h <- 0.4
+T0 <- 260
+fEBM <- function(T){(1-alpha)*S*cos(lat*pi/180) -(ep*sigma*T^4 + k*(T-T0)/h)}
+#Numerically solve this EBM: fEBM = 0
+uniroot(fEBM,c(100,420))
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 5.5
+```{r}
+#Define a piecewise albedo function 
+a1 <- 0.7
+a2 <- 0.3
+T1 <- 250
+T2 <- 280
+ab <- function(T) {ifelse(T < T1, a1, ifelse(T < T2,((a1-a2)/(T1-T2))*(T-T2)+ a2, a2))}
+#Define the range of temperature 
+T <- seq(200,350,len = 200)
+#Plot the albedo as a nonlinear function of T
+#setwd("/Users/sshen/climmath")
+#png(file = "fig05-05.png", width = 400, height = 300)
+par(mar = c(4,4,4,3))
+plot(T, ab(T), type = "l", lwd = 2.0,
+     ylim = c(0,1), xlab = "Surface Temperature [K]",
+     ylab = "Albedo", main = "Nonlinear Albedo Feedback"
+     ,cex.lab = 1.2,cex.axis = 1.2)
+# dev.off()
+#One can plot the albedo function directly without using a function
+curve(ifelse(x < 260, 0.7, ifelse(x < 285,-0.016*x+ 4.86, 0.3)), from = 200, to = 350)
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 5.6
+```{r}
+#Formulate and solve an EBM
+S <- 1368
+ep <- 0.6
+sg <- 5.670373*10^(-8)
+T <- seq(200,350, by = 0.1)
+Ein <- (1-ab(T))*(S/4)
+Eout <- ep*sg*T^4
+#png("fig05-07.png",width = 8,height = 6, units = 'in', res = 300)
+plot(T, Ein, xlim = c(200, 350), ylim = c(0,300),
+     xaxp = c(200, 350, 15), yaxp = c(0, 300, 10),
+     type = "l",col = "red", lwd = 3,
+     panel.first = grid(30, lty = "dotted", lwd = 1),
+     main = expression(paste("Simple Nonlinear EBM with Albedo Feedback: ",E[out]," = ",E["in"])), 
+     ylab = expression(paste("Energy [W/",m^2,"]")),
+     xlab = "Surface temperature T [K]",
+     cex.lab = 1.2,cex.axis = 1.2)
+lines(T, Eout,col = "blue",lwd = 2.0)
+lines(T, Eout-Ein,col = "black",lwd = 2.0) 
+y0 <- 0.0*T
+lines(T, y0,col = "purple")
+text(310, 248, expression(E["in"]), col = "red", cex = 1.2)
+text(290, 275, expression(E[out]), col = "blue", cex = 1.2)
+text(300, 100, expression(paste(E[out]," - ",E["in"])), col = "black", cex = 1.2)
+text(234,10, "T1", cex = 1.2)
+text(267,10, "T2", cex = 1.2)
+text(287,10, "T3", cex = 1.2)
+points(234, 0, pch = 16)
+points(263, 0, pch = 16)
+points(290, 0, pch = 16)
+# dev.off()
+# The three intersections of the green and purple lines 
+# are three solutions: T1 = 234, T2 = 263, T3 = 290 deg K. 
+```
+
+<p>&nbsp;</p>
+### Solve an EBM
+```{r}
+S <- 1368
+ep <- 0.6
+sg <- 5.670373*10^(-8)
+f <- function(T){return(ep*sg*T^4 - (1-ab(T))*(S/4))}
+uniroot(f,c(260,275))
+uniroot(f,c(275,295))
+uniroot(f,c(220,240))
+```
+
+<p>&nbsp;</p>
+### Bifurcation diagram based an EBM model
+```{r}
+#T and solar constant Q relation
+#png("QT-relation.png",width = 6,height = 8, units = 'in', res = 200)
+q <- function(T){return(ep*sg*T^4/ (1-ab(T)))}
+plot(q(T),T,type = "l", lwd = 2, xlim = c(200,700),ylim = c(200,350),
+     main = "Solar Constant and Temperature in an EBM",
+     ylab = "Temperature [K]",
+     xlab = expression(paste("Solar Radiation Q = S/4 [W/",m^2,"]")),
+     cex.lab = 1.2,cex.axis = 1.2)
+Tm <- seq(250,280)
+lines(q(Tm),Tm,col = "red", lwd = 3)
+#dev.off()
+```

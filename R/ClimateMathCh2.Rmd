@@ -1,0 +1,269 @@
+---
+title: "&nbsp;"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+<center><h1>R Code for Climate Mathematics:</h1></center>
+<center><h1>Theory and Applications</h1></center>
+<p>&nbsp;</p>
+<center><h3>A Cambridge University Press book By</h3></center>
+<center><h3>SSP Shen and RCJ Somerville</h3></center>
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+<div align="center">Version 1.0 released in July 2019 and coded by Dr. Samuel Shen, Distinguished Professor</div>
+<div align="center">San Diego State University, California, USA</div> 
+<div align="center"><https://shen.sdsu.edu></div> 
+<div align="center">Email: <sshen@sdsu.edu></div> 
+<p>&nbsp;</p>
+<div align="center">Version 2.0 compiled and updated by Momtaza Sayd</div> 
+<div align="center">San Diego State University May 2021</div>
+<div align="center">Version 3.0 compiled and updated by Joaquin Stawsky</div>
+<div align="center">San Diego State University June 2022</div>
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+## Chapter 2: Basics of R Programming
+
+### R as a smart calculator
+```{r}
+1+4
+2+pi/4-0.8
+x <- 1
+y <- 2
+z <- 4
+t <- 2*x^y-z
+t
+u = 2        # "=" sign and "<-" are almost equivalent
+v = 3        # The text behind the "#" sign is comments
+u+v
+sin(u*v)    # u*v = 6 in the sine function is considered a radian by R 
+```
+
+<p>&nbsp;</p>
+### Define a sequence in R
+```{r}
+#Enter temperature data in c() 
+tmax <- c(77, 72, 75, 73, 66, 64, 59)
+#Show the data
+tmax
+#Generate same sequence using different methods
+seq(1,8)
+seq(8)
+seq(1,8, by = 1)
+seq(1,8, length = 8)
+seq(1,8, length.out = 8)
+```
+
+
+<p>&nbsp;</p>
+### Define a function in R
+```{r}
+#Define a function
+samfctn <- function(x) x*x
+samfctn(4)
+fctn2 <- function(x,y,z) x+y-z/2
+fctn2(1,2,3)
+```
+
+
+<p>&nbsp;</p>
+### Plot with R
+```{r}
+#Plot temperature data
+plot(1:7, c(77, 72, 75, 73, 66, 64, 59))
+
+#More plot examples
+plot(sin, -pi, 2*pi)   #plot the curve of y = sin(x) from -pi to 2 pi
+
+square <- function(x) x*x   #Define a function
+plot(square, -3, 2)   # Plot the defined function
+
+# Plot a 3D surface
+x <- seq(-1, 1, length = 100)
+y <- seq(-1, 1, length = 100)
+z <- outer(x, y, function(x, y)(1-x^2-y^2))  
+# 'outer(x,y, function)' renders z function on the x, y grid
+persp(x,y,z, theta = 330) 
+# yields a 3D surface with perspective angle 330 deg
+
+#Contour plot
+contour(x,y,z) #lined contours
+filled.contour(x,y,z) #color map of contours with default colors
+```
+
+
+<p>&nbsp;</p>
+### Symbolic calculations by R
+```{r}
+D(expression(x^2,'x'), 'x') 
+# Take derivative of x^2 w.r.t. x 
+2 * x #The answer is 2x
+
+fx <- expression(x^2,'x')  #assign a function  
+D(fx,'x') #differentiate the function w.r.t. x
+2 * x  #The answer is 2x
+
+fx <- expression(x^2*sin(x),'x') 
+#Change the expression and use the same derivative command
+D(fx,'x')
+
+2 * x * sin(x) + x^2 * cos(x)
+
+fxy <- expression(x^2+y^2, 'x','y') 
+#One can define a function of 2 or more variables
+fxy #Renders an expression of the function in terms of x and y
+#expression(x^2 + y^2, "x", "y")
+D(fxy,'x') #yields the partial derivative with respect to x: 2 * x
+D(fxy,'y') #yields the partial derivative with respect to y: 2 * y
+
+square <- function(x) x^2
+#Integrate x^2 from 0 to 1 equals to 1/3 with details below
+integrate(square,0,1)
+#0.3333333 with absolute error < 3.7e-15
+
+#Integrate cos(x) from 0 to pi/2 equals to 1 with details below
+integrate(cos,0,pi/2) 
+#1 with absolute error < 1.1e-14
+
+```
+
+
+<p>&nbsp;</p
+### Vectors and matrices
+```{r}
+c(1,6,3,pi,-3) #c() gives a vector and is considered a 5X1 column vector
+seq(2,6) #Generate a sequence from 2 to 6
+seq(1,10,2) # Generate a sequence from 1 to 10 with increments of 2
+x <- c(1,-1,1,-1)
+x+1 #1 is added to each element of x
+2*x #2 multiplies each element of x
+x/2 # Each element of x is divided by 2
+y <- seq(1,4)
+x*y  # This multiplication * multiples each pair of elements 
+x%*%y #This is the dot product of two vectors and yields a 1x1 matrix
+t(x)  # Transforms x into a row 1X4 vector
+t(x)%*%y #This is equivalent to dot product and forms 1X1 matrix
+x%*%t(y) #This column times row yields a 4X4 matrix
+my <- matrix(y,ncol = 2) 
+#Convert a vector into a matrix of the same number of elements
+#The matrix elements go by column, first column, second, etc
+#Commands matrix(y,ncol = 2, nrow = 2)  or matrix(y,2)  
+#or matrix(y,2,2) does the same job
+my
+dim(my)  #find dimensions of a matrix
+as.vector(my) #Convert a matrix to a vector, again via columns
+mx <- matrix(c(1,1,-1,-1), byrow = TRUE,nrow = 2)
+mx*my #multiplication between each pair of elements
+mx/my #division between each pair of elements
+mx-2*my  
+mx%*%my #This is the real matrix multiplication in matrix theory
+det(my) #determinant
+myinv <- solve(my) #yields the inverse of a matrix
+myinv
+myinv%*%my #verifies the inverse of a matrix
+diag(my) #yields the diagonal vector of a matrix
+myeig <- eigen(my) #yields eigenvalues and unit eigenvectors
+myeig
+myeig$values
+myeig$vectors
+mysvd <- svd(my) #SVD decomposition of a matrix M <- UDV'
+#SVD can also be done for a rectangular matrix of mXn dimensions
+mysvd$d
+mysvd$u
+mysvd$v
+
+ysol <- solve(my,c(1,3)) 
+#solve linear equations for matrix%*%x = b
+ysol  #solve(matrix, b)
+my%*%ysol #verifies the solution
+```
+
+
+<p>&nbsp;</p>
+### Simple statistics by R
+```{r}
+x <- rnorm(10) #generate 10 normally distributed numbers
+x
+mean(x)
+
+var(x)
+
+sd(x)
+
+median(x)
+
+quantile(x)
+
+range(x) #yields the min and max of x
+
+max(x)
+
+boxplot(x) #yields the box plot of x
+
+w <- rnorm(1000)
+hist(w) 
+#yields the histogram of 1000 random numbers with a normal distribution
+
+summary(rnorm(12)) #statistical summary of the data sequence
+
+#Linear regression and linear trend line
+#2007-2016 data of the global temperature anomalies
+#Source: NOAAGlobalTemp data
+t <- 2007:2016
+T <- c(.36,.30, .39, .46, .33, .38, .42, .50, .66, .70)
+lm(T ~ t) #Linear regression model of temp vs time
+
+#Temperature change rate is 0.03673  deg C/yr or 0.37 deg C/decade
+# expression(paste(...)) is one way of using the degree symbol
+# ...pasting the ° symbol directly is another way
+plot(t,T, type = "o",xlab = "Year",ylab = expression(paste("Temperature [",~degree,"C]")), 
+     main = expression(paste("2007-2016 Global Temperature Anomalies\n and Their Linear Trend [0.37 °C/decade]")))
+abline(lm(T ~ t), lwd = 2, col = "red") #Regression line
+```
+
+
+<p>&nbsp;</p>
+### YouTube tutorial: Input data by reading a csv file into R
+```{r}
+#The R packages and the datasets used in this book are 
+#listed below and can be downloaded and installed first 
+#before proceeding to the R codes in the rest of the book. 
+#The R packages: 
+#animation, chron, e1071, fields, ggplot2, lattice, 
+#latticeExtra, maps, mapdata, mapproj, matrixStats, ncdf, 
+#NLRoot, RColorBrewer, rgdal, rasterVis, raster, sp, TTR
+
+#To load the package "animation", you can do 
+library(animation)
+
+#You can also load all these packages in one shot
+#using pacman
+#install.packages("pacman")
+library(pacman)
+pacman::p_load(animation, chron, e1071, fields, ggplot2, lattice, 
+            latticeExtra, maps, mapdata, mapproj, matrixStats, ncdf4, 
+            NLRoot, RColorBrewer, rgdal, rasterVis, raster, sp, TTR)
+
+#The zipped data file:
+# https://www.cambridge.org/climatemathematics/data.zip
+
+#On your computer, you can create a directory called 
+#climmath under your user name. 
+#The one used in the book is Users/sshen/climmath  
+#You unzip the data and move the data folder under 
+#the Users/sshen/climmath directory. 
+#A data folder will created:  
+#Users/sshen/climmath/data. 
+#The data folder contains about 400 MB of data. 
+#Place all the R codes in the directory  Users/sshen/climmath. 
+#Then, you can run all the codes in this book after replacing sshen 
+#by your user name on your own computer. 
+
+```
+
+

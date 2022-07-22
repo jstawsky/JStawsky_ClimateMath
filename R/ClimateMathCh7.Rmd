@@ -1,0 +1,139 @@
+---
+title: "&nbsp;"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+<center><h1>R Code for Climate Mathematics:</h1></center>
+<center><h1>Theory and Applications</h1></center>
+<p>&nbsp;</p>
+<center><h3>A Cambridge University Press book By</h3></center>
+<center><h3>SSP Shen and RCJ Somerville</h3></center>
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+<div align="center">Version 1.0 released in July 2019 and coded by Dr. Samuel Shen, Distinguished Professor</div>
+<div align="center">San Diego State University, California, USA</div> 
+<div align="center"><https://shen.sdsu.edu></div> 
+<div align="center">Email: <sshen@sdsu.edu></div> 
+<p>&nbsp;</p>
+<div align="center">Version 2.0 compiled and updated by Momtaza Sayd</div> 
+<div align="center">San Diego State University May 2021</div>
+<div align="center">Version 3.0 compiled and updated by Joaquin Stawsky</div>
+<div align="center">San Diego State University June 2022</div>
+
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+## Chapter 7: Calculus Applications to Climate Science II: Integrals
+
+### Plot Fig. 7.3: Corpus Christi: Elevation vs. F = g/(RT)
+```{r}
+setwd("~/sshen/climmath")
+dat <- read.table("data/CorpsCristiTX13295R1.txt", header = FALSE)
+dim(dat)
+#plot.new()
+da2 <- dat
+for(i in 1:146){if(dat[i,4] >9999){da2[i,4] = NA} }
+R <- 287.055 #[J/(kg K)]
+g <- 9.8 #[m/sec^2]
+  
+par(mar = c(4.2,4.2,3,0.5))
+plot(da2[,3],(g/R)/(273.15+da2[,4]/10),type = "l", 
+     ylim = c(0,0.0002), lwd = 8,col = "red",
+     xlab = "Elevation: z [m]", ylab = "F = g/(RT)",
+     main = "Hypsometric Equation Integrand Based on the Radiosonde Data
+     Corpus Christi, Texas, 0:00UTC, 12 September 2013",
+     cex.axis = 1.2, cex.lab = 1.2)
+lines(c(14, 9992),c((g/R)/(273.15+26.8),(g/R)/(273.15-34.1)), lwd = 2, col = "blue")
+lines(c(14, 14),c(0,(g/R)/(273.15+26.8)), lwd = 2, col = "blue")
+lines(c(9992, 9992),c(0,(g/R)/(273.15-34.1)), lwd = 2, col = "blue")
+lines(c(14, 9992),c(0,0), lwd = 2, col = "blue")
+text(1200,0.000075,"F1", cex = 1.2)
+text(11500,0.000075,"F2", cex = 1.2)
+text(1500,0.000007,"z1", cex = 1.2)
+text(11500,0.000007,"z2", cex = 1.2)
+points(c(14,10000,14,10000), 
+       c(0,0,(g/R)/(273.15+26.8),(g/R)/(273.15-34.1)), 
+       pch = 19, cex = 0.6)
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 7.5
+```{r}
+#Planck's law of blackbody radiation for the Sun and Earth
+#setwd("/Users/sshen/climmath")
+#Solar radiation
+#setEPS()
+#postscript("fig0705a.eps", height = 10, width = 8)
+h <- 6.626070040
+k <- 1.38064852
+c <- 3
+x <- seq(0.01,3,len = 2000)
+et2 <- function(x){(2*h*c^2/x^5)/(exp(h*c/(k*x*T))-1)}
+#plot(1, lwd = 0, xlim = c(0,3), ylim = c(0,30))
+par(mar = c(4,5.0,1.5,0.5))
+plot(1,type = "l",lwd = 0, xlim = c(0,3), ylim = c(0,30),
+     main = "Planck's Law of Blackbody Radiation Around 5,000 K",
+     xlab = expression(paste("Wavelength [", mu, "m]")),
+     ylab = expression(paste("Spectral Power Flux of Radiation: ", "[kW/(", m^2, " nm)]")),
+     cex.lab = 1.2, cex.axis = 1.2, cex.main = 1.3)
+segments(0.41,0,0.41,30,lwd = 4,col = "purple")
+segments(0.43,0,0.43,30,lwd = 6,col = "blue4")
+segments(0.46,0,0.47,30,lwd = 10,col = "blue")
+segments(0.52,0,0.52,30,lwd = 14,col = "green")
+segments(0.57,0,0.57,30,lwd = 8,col = "yellow")
+segments(0.61,0,0.61,30,lwd = 9,col = "orange")
+segments(0.69,0,0.69,30,lwd = 24,col = "red")
+text(1.1,-0.2, "infrared", cex = 1.2)
+text(0.63,-0.2, "visible", cex = 1.2)
+text(0.15,-0.2, "ultraviolet", cex = 1.2)
+T <- 5.0
+lines(x,et2(x), type = "l", col = "darkolivegreen2", lwd = 2)
+T <- 5.772
+lines(x,et2(x), type = "l", col = "blue4", lwd = 2)
+T <- 4.0
+lines(x,et2(x), type = "l", col = "brown3", lwd = 2)
+legend(1.5,25, 
+       legend = c("T = 5772 K","T = 5000 K", "T = 4000 K" ), 
+       col = c("blue4","darkolivegreen2","brown3"),
+       lty = 1, lwd = 3,
+       cex = 1.2)
+#dev.off()
+```
+
+<p>&nbsp;</p>
+### Earth radiation
+```{r}
+#setEPS()
+#postscript("fig0705b.eps", height = 10, width = 8)
+par(mar = c(4,5.0,1.5,0.5))
+h <- 6.626070040
+k <- 1.38064852
+c <- 3
+et <- function(x){10^6*(2*h*c^2/x^5)/(exp(h*c/(k*x*T))-1)}
+x <- seq(0.01,80,len = 2000)
+T <- 0.288
+plot(x,et(x), type = "l", col = "black", lwd = 2,
+     main = expression(paste("Planck's Law of Blackbody Radiation Around 15",degree,"C")),
+     xlab = expression(paste("Wavelength [", mu, "m]")),
+     ylab = expression(paste("Spectral Power Flux of Radiation: ", 10^-6, "[kW/(", m^2, " nm)]")),
+     cex.lab = 1.2, cex.axis = 1.2, cex.main = 1.3, ylim = c(0,10))
+T <- 0.290
+lines(x,et(x), type = "l", lty = 3, lwd = 2)
+T <- 0.286
+lines(x,et(x), type = "l", lty = 2, lwd = 2)
+legend(40,9, 
+       legend = c(expression(paste("T = 15+2 ",degree,"C")),
+                  expression(paste("T = 15 ",degree,"C")),
+                  expression(paste("T = 15-2 ",degree,"C"))), 
+       #       col = c("red","black","blue"),
+       lty = c(3,1,2), lwd = 3,
+       cex = 1.2)
+#dev.off()
+```
+
+

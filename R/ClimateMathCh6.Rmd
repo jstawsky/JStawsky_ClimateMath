@@ -1,0 +1,238 @@
+---
+title: "&nbsp;"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+<center><h1>R Code for Climate Mathematics:</h1></center>
+<center><h1>Theory and Applications</h1></center>
+<p>&nbsp;</p>
+<center><h3>A Cambridge University Press book By</h3></center>
+<center><h3>SSP Shen and RCJ Somerville</h3></center>
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+<div align="center">Version 1.0 released in July 2019 and coded by Dr. Samuel Shen, Distinguished Professor</div>
+<div align="center">San Diego State University, California, USA</div> 
+<div align="center"><https://shen.sdsu.edu></div> 
+<div align="center">Email: <sshen@sdsu.edu></div> 
+
+<p>&nbsp;</p>
+<div align="center">Version 2.0 compiled and updated by Momtaza Sayd</div> 
+<div align="center">San Diego State University May 2021</div>
+<div align="center">Version 3.0 compiled and updated by Joaquin Stawsky</div>
+<div align="center">San Diego State University June 2022</div>
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+## Chapter 6: Calculus Applications to Climate Science I: Derivatives
+
+### Plot Fig. 6.1
+```{r}
+#setEPS()
+#postscript("fig0601.eps", height = 8, width = 10)
+#Cess' Budyko parameters
+par(mar = c(4.5,5,2,0.5))
+A <- 212
+B <- 1.6
+ep <- 0.6
+sg <- 5.670373*10^(-8)
+T <- seq(-50,50, by=0.1)
+S <- 1365
+alf <- 0.30
+plot(T,A+B*T, xlim = c(-50,50), ylim = c(0,500), 
+     type = "l",lwd = 4, cex.lab = 1.2, cex.axis = 1.2,cex.main = 1.35,
+     main = "Radiation Law and Its Approximations",
+     xlab = expression(paste("Temperature T [",degree,"C]")),
+     ylab = expression(paste("Outgoing Radiation: ", E[out], " [W/",m^2,"]")))
+lines(T, ep*sg*(273.15+T)^4,col = "blue", lwd = 3)
+lines(T, 189.4 + 2.77*T,type = "l", col = "purple",lwd = 3)
+lines(T, (1-alf)*S/4*rep(1, length(T)), col = "red",lwd = 2)
+legend(-50, 510, legend = c("Budyko radiation formula", 
+                          "Stefan-Boltzmann radiation law",
+                          "Linear Approximation of SB law",
+                          "Observed outgoing radiation"),
+       col = c("black", "blue","purple","red"),
+       lty = 1, bty = "n",lwd = 3, cex = 1.2)
+text(-40,180, "Budyko formula",cex = 1.2)
+text(15,310, "Stefan-Boltzmann law", col = "blue",cex = 1.2)
+text(-3,65, "Linear Approximation to Stefan-Boltzmann law", 
+     col = "purple",cex = 1.2)
+text(-37,255, expression(paste( E[out], " = 239 [W/",m^2,"]")), 
+     col = "red", cex = 1.2)
+#dev.off()
+```
+
+<p>&nbsp;</p>
+### Generate Table 6.1
+```{r}
+x <- seq(-0.3,0.3, by = 0.1)
+fx <- c(1:7)
+lx <- c(1:7)
+ex <- c(1:7)
+for(i in 1:7){fx[i] <- (1+x[i])^4
+  lx[i] <- 1+4*x[i]
+  ex[i] <- ((1+x[i])^4-(1+4*x[i]))/((1+x[i])^4)*100
+}
+round(cbind(x, fx, lx, ex), digits = 4)
+```
+
+<p>&nbsp;</p>
+### Solve an equation by the bisection method
+```{r}
+#install.packages("NLRoot") #if not installed before
+library(NLRoot)
+func <- function(x){x^3-x-1}
+#[1] 1.324716 is the solution
+BFfzero(func, 0, 2)
+```
+
+<p>&nbsp;</p>
+### Another bisection example
+```{r}
+f1 <- function(x){(1+x)^4-(2+x)}
+#[1] 0.2207428 is the solution
+BFfzero(f1,0,2)
+```
+
+<p>&nbsp;</p>
+### Solve an EBM by the bisection method
+```{r}
+S <- 1368
+ep <- 0.6
+sg <- 5.670373*10^(-8)
+f2 <- function(T){ep*sg*T^4 - (1-(0.5 - 0.2*tanh((T-265)/10)))*(S/4)}
+#[1] 289.3097 is the solution
+BFfzero(f2,270,300)
+```
+
+<p>&nbsp;</p>
+### R code for the Newton's method to solve an equation
+```{r}
+newton <- function(f, tol = 1E-12,x0 = 1,N = 20) {
+  h <- 0.001
+  i <- 1; x1 <- x0
+  p <- numeric(N)
+  while (i <= N) {
+    df.dx <- (f(x0+h)-f(x0))/h
+    x1 <- (x0 - (f(x0)/df.dx))
+    p[i] <- x1
+    i <- i + 1
+    if (abs(x1-x0) < tol) break
+    x0 <- x1
+  }
+  return(p[1:(i-1)])
+}
+f <- function(x) { x^3 + 4*x^2 -10 }
+root <- newton(f, tol = 1E-12, x0 = 1, N = 10)
+root
+uniroot(f,c(1,2), tol = 10^(-6))
+
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 6.2
+```{r,fig.width = 8, fig.height = 6}
+#Illustration of Newton's method
+#setEPS()
+#postscript("fig0602.eps", height = 6, width = 8)
+par(mar = c(0,1,0,0))
+x <- seq(0.2,1.7, len = 30)
+f <- function(x) { x^3 + 4*x^2 -10 }
+g <- function(x) { 3*x^2 + 8*x }
+plot(x,f(x), type = 'l', lwd = 1.5, bty = "n", 
+     xaxt = "n",yaxt  = "n", xlab = "", ylab = "",
+     xlim = c(0,1.8),ylim = c(-10,7))
+axis(1, at = c(0, 0.5, 1.0, 1.5, 1.7), pos = 0, cex.lab = 1.3)
+axis(2, at = c(-8, -6, -4, -2, 0, 2, 4), pos = 0, cex.lab = 1.3, las = 1)
+arrows(0,0, 1.8,0, angle = 10, length = 0.25)
+arrows(0,-11, 0,7, angle = 10, length = 0.25)
+text(1.8, 0.5, expression(x), cex = 1.4)
+text(0.05, 7, expression(y), cex = 1.4)
+text(0.4, -8, expression(y == x^3 + 4*x^2 -10), cex = 1.4) 
+#Plot the initial points and then follow tangent lines
+x0 <- 1.0
+x1 <- 1.4543
+x2 <- 1.3689
+lines(x,f(x0) + g(x0)*(x - x0),type = "l", lty = 2, col = "red")
+text(0.73,-8.5, expression(paste("Tangent line through ", P[0])),
+     col = "red", cex = 1.2, srt = 42)
+points(1,0, pch = 19)
+text(1.0, 1.3, "Initial guess", cex = 1.4, col = "blue")
+text(1.0, 0.5, expression(x[0]), cex = 1.4, col = "blue")
+arrows(1,0,1,-5, angle = 10, length = 0.15, col = "blue")
+points(x0, f(x0), col = "red", pch = 20)
+text(x0+ 0.02, f(x0) - 0.5, expression(P[0]), cex = 1.4, col = "red")
+arrows(x0,f(x0), x1,0, angle = 10, length = 0.15, col = "blue")
+points(x1,0, pch = 19)
+text(x1+0.04, 0.3, expression(x[1]), cex = 1.4, col = "blue")
+arrows(x1,0,x1,f(x1), angle = 10, length = 0.15, col = "blue")
+points(x1, f(x1), col = "red", pch = 20)
+text(x1+ 0.05, f(x1), expression(P[1]), cex = 1.4, col = "red")
+lines(x,f(x1) + g(x1)*(x - x1),type = "l", lty = 2, col = "red")
+text(1.05,-6.5, expression(paste("Tangent line through ", P[1])),
+     col = "red", cex = 1.2, srt = 56)
+arrows(x1,f(x1),x2,0, angle = 10, length = 0.15, col = "blue")
+points(x2,0, pch = 19)
+text(1.34,0.5, expression(x[2]), cex = 1.4, col = "blue")
+text(0.8, 6, "Newton's method for finding a root:", cex = 1.8)
+text(0.8, 5,"Follow the blue arrows from the initial guess", 
+     cex = 1.3, col = "blue")
+text(0.8, 4, expression(x[0] %=>% P[0] %=>% x[1] %=>% P[1] %=>% x[2] %=>% ...), 
+     cex = 1.3, col = "blue")                            
+#dev.off()
+```
+
+<p>&nbsp;</p>
+### Use Newton's method to solve an equation
+```{r}
+f <- function(x) { (x+1)^4 -(2+x) }
+root <- newton(f, tol = 1E-12, x0 = 1, N = 10)
+root
+```
+
+<p>&nbsp;</p>
+### Find multiple solutions of an EBM
+```{r}
+S <- 1365
+ep <- 0.6
+sg <- 5.670373*10^(-8)
+#Define the function for energy
+f3 <- function(T){return(ep*sg*T^4 - 
+                           (1-(0.5 - 0.2 * tanh ((T-265)/10)))*(S/4))}
+root1 <- newton(f3, tol = 1E-12, x0 = 220,N = 20)
+root1
+root2 <- newton(f3, tol = 1E-12, x0 = 270,N = 20)
+root2
+root3 <- newton(f3, tol = 1E-12, x0 = 300,N = 20)
+root3
+root5 <- newton(f3, tol = 1E-12, x0 = 100, N = 20)
+root5
+```
+
+<p>&nbsp;</p>
+### Use R to find derivatives of a function symbolically
+```{r}
+D(expression(x^2),"x")
+# 2 * x
+
+D(expression(exp(-x^2)),"x")
+# -(exp(-x^2) * (2 * x))
+
+D(expression(sin(-3*t)-2*cos(4*t-0.3*pi)),"t")
+# -(cos(-3 * t) * 3 - 2 * (sin(4 * t - 0.3 * pi) * 4))
+
+D(expression(-g*t^2/2 + v0*t + h0),"t")
+# v0 - g * (2 * t)/2
+# Find derivative of this result function to find the second derivative
+D(expression(v0 - g * (2 * t)/2),"t")
+# -(g * 2/2)
+#or simply
+D(D(expression(-g*t^2/2 + v0*t + h0),"t"),"t")
+# -(g * 2/2)
+#The third-order derivative
+D(D(D(expression(-g*t^2/2 + v0*t + h0),"t"),"t"),"t")
+```

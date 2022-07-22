@@ -1,0 +1,401 @@
+---
+title: "&nbsp;"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+<center><h1>R Code for Climate Mathematics:</h1></center>
+<center><h1>Theory and Applications</h1></center>
+<p>&nbsp;</p>
+<center><h3>A Cambridge University Press book By</h3></center>
+<center><h3>SSP Shen and RCJ Somerville</h3></center>
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+<div align="center">Version 1.0 released in July 2019 and coded by Dr. Samuel Shen, Distinguished Professor</div>
+<div align="center">San Diego State University, California, USA</div> 
+<div align="center"><https://shen.sdsu.edu></div> 
+<div align="center">Email: <sshen@sdsu.edu></div> 
+<p>&nbsp;</p>
+<div align="center">Version 2.0 compiled and updated by Momtaza Sayd</div> 
+<div align="center">San Diego State University May 2021</div>
+<div align="center">Version 3.0 compiled and updated by Joaquin Stawsky</div>
+<div align="center">San Diego State University June 2022</div>
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+## Chapter 4: Climate Data Matrices and Linear Algebra
+
+### Matrix algebra
+```{r}
+#Matrix subtraction
+matrix(c(1,1,1,-1), nrow = 2) - matrix(c(1,3,2,0), nrow = 2)
+
+#Matrix multiplication
+matrix(c(1,1,1,-1), nrow = 2) %*% matrix(c(1,2,3,4), nrow = 2)
+
+matrix(c(1,2,3,4), nrow = 2) %*% matrix(c(1,1,1,-1), nrow = 2) 
+
+#Find the inverse of a matrix
+solve(matrix(c(1,1,1,-1), nrow = 2))
+
+#Verify the inverse matrix 
+matrix(c(0.5,0.5,0.5,-0.5), nrow = 2) %*% matrix(c(1,1,1,-1), nrow = 2) 
+
+
+#Solve a group of linear equations
+solve(matrix(c(1,1,1,-1),nrow = 2),c(20,4))
+#This is the result x1 = 12, and x2 = 8.
+
+#Compute a covariance matrix
+A <- matrix(c(1,-1,2,0,3,1),nrow = 2)
+A
+covm <- (1/(dim(A)[2]))*A%*%t(A)
+covm #is the covariance matrix.
+
+#Matrix multiplication of a vector changes the vector direction 
+u <- c(1,-1)
+v <- covm%*%u
+v
+#u and v are in different directions.
+
+#Matrix mutiplication of an eigenvector does change direction
+ew <- eigen(covm)
+eigen(covm)$values
+eigen(covm)$vectors
+#Verify the eigenvectors and eigenvalues
+covm%*%ew$vectors[,1]/ew$values[1]
+
+#This is the first eigenvector
+
+#SVD: Decomposition and recovery of a space-time data matrix 
+#Develop a 2-by-3 space-time data matrix for SVD
+A <- matrix(c(1,-1,2,0,3,1),nrow = 2)
+A
+#Perform SVD calculation
+msvd <- svd(A)
+msvd
+msvd$d
+msvd$u
+msvd$v
+#One can verify that A = UDV', where V' is transpose of V.
+verim <- msvd$u%*%diag(msvd$d)%*%t(msvd$v)
+verim
+round(verim)
+#This is the original data matrix A
+
+#Covariance matrix and its eigen-problem
+covm <- (1/(dim(A)[2]))*A%*%t(A)
+eigcov <- eigen(covm)
+eigcov$values
+eigcov$vectors
+
+#Eigenvalues from SVD and from a covariance matrix
+((msvd$d)^2)/(dim(A)[2])
+eigcov$values
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 4.2
+```{r}
+#SOI and the Standardized SLP data at Darwin and Tahiti 
+setwd("~/sshen/climmath")
+#setEPS()
+#postscript("fig0402a.eps", height = 4.9, width = 7)
+#par(mar = c(4.0,4.2,1.5,0.5))
+Pta <- read.table("data/PSTANDtahiti.txt", header = F)
+# Remove the first column that is the year
+ptamon <- Pta[,seq(2,13)]
+#Convert the matrix into a vector according to mon: Jan 1951, Feb 1951, ..., Dec 2015
+ptamonv <- c(t(ptamon))
+#Generate time ticks from Jan 1951 to Dec 2015
+xtime <- seq(1951, 2016-1/12, 1/12)
+# Plot the Tahiti standardized SLP anomalies
+plot(xtime, ptamonv,type = "l",xlab = "Year",
+     ylab = "Pressure Anomalies", cex.lab = 1.2, cex.axis = 1.2,
+     main = "Standardized Tahiti SLP Anomalies", col = "red",
+     xlim = range(xtime), ylim = c(-4,4))
+text(1952,3.5, "(a)", cex = 1.2)
+# dev.off()
+
+```
+
+<p>&nbsp;</p>
+### Do the same for Darwin SLP
+```{r}
+setwd("~/sshen/climmath/")
+#setEPS()
+#postscript("fig0402b.eps", height = 4.9, width = 7)
+#par(mar = c(4.0,4.2,1.5,0.5))
+Pda <- read.table("data/PSTANDdarwin.txt", header = F)
+pdamon <- Pda[,seq(2,13)]
+pdamonv <- c(t(pdamon))
+plot(xtime, pdamonv,type = "l",cex.lab = 1.2, cex.axis = 1.2,
+     xlab = "Year",ylab = "Pressure", 
+     main = "Standardized Darwin SLP Anomalies", col = "blue",
+     xlim = range(xtime), ylim = c(-4,4))
+text(1952,3.5, "(b)", cex = 1.2)
+# dev.off()
+```
+
+<p>&nbsp;</p>
+### Plot the SOI index 
+```{r}
+#setEPS()
+#postscript("fig0402c.eps", height = 4.9, width = 7)
+#par(mar = c(4.0,4.2,2.0,0.5))
+SOI <- ptamonv-pdamonv
+plot(xtime, SOI ,type = "l", cex.lab = 1.2, cex.axis = 1.2,
+     xlab = "Year",ylab = "SOI index", 
+     col = "black",xlim = range(xtime), ylim = c(-6,6), lwd = 1)
+#Add ticks on top edge of the plot box
+axis (3, at = seq(1951,2015,4), labels = seq(1951,2015,4))
+#Add ticks on the right edge of the plot box
+axis (4, at = seq(-4,4,2), labels = seq(-4,4,2))
+lines(xtime, rep(0,length(xtime)))
+text(1985, 5, "SOI = Tahiti Pressure - Darwin Pressure", cex = 1.2)
+text(1952,5.6, "(c)", cex = 1.2)
+#abline(lm(SOI ~ xtime), col = "red", lwd = 2)
+# dev.off()
+```
+
+<p>&nbsp;</p>
+### CSOI and AMO time series comparison
+```{r}
+setwd("~/sshen/climmath/")
+# setEPS()
+#postscript("fig0402d.eps", height = 4.9, width = 7)
+par(mar = c(4,4.2,1.6,4))
+cnegsoi <- -cumsum(ptamonv-pdamonv)
+#par(mgp = c(2,2,4,0))
+plot(xtime, cnegsoi,type = "l", cex.lab = 1.2, cex.axis = 1.2,
+     xlab = "Year",ylab = "Negative CSOI index", 
+     main = "CSOI and AMO Index Comparison", 
+     col = "purple",xlim = range(xtime), ylim = range(cnegsoi), lwd = 1.5)
+legend(1960,15, col = c("purple"),lty = 1,lwd = 2.0,
+       legend = c("CSOI"),bty = "n",text.font = 2,cex = 1.2)
+text(1951,12, "(d)", cex = 1.2)
+#AMO data and plot
+amodat <- read.table("data/AMO1951-2015.txt", header = FALSE)
+amots <- as.vector(t(amodat[,2:13]))
+par(new = TRUE)
+plot(xtime, amots,type = "l",col = "darkgreen",
+     cex.lab = 1.2, cex.axis = 1.2,
+     lwd = 1.5,axes = FALSE,xlab = "",ylab = "")
+legend(1960,0.45, col = c("darkgreen"),lty = 1,lwd = 2.0,
+       legend = c("AMO index"),bty = "n",text.font = 2,cex = 1.2)
+#Suppress the axes and assign the y-axis to side 4
+axis(4, cex.axis = 1.3)
+mtext("AMO index",side = 4,line = 3, cex = 1.2)
+# dev.off()
+```
+
+<p>&nbsp;</p>
+### Compute the weighted SOI by SVD
+```{r}
+#Time-space data format
+ptada <- cbind(ptamonv,pdamonv)
+#Space-time data format
+ptada <- t(ptada)
+#Implement SVD for the sapce-time data
+svdptd <- svd(ptada)
+recontd <- svdptd$u%*%diag(svdptd$d[1:2])%*%t(svdptd$v)
+recontd <- ptada
+#Two EOFs from the space-time data
+U <- svdptd$u
+U
+#These are the weights for the WSOI
+svdptd$d
+D <- diag(svdptd$d)
+D
+
+#PCs: The principal components
+V <- svdptd$v
+V
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 4.3
+```{r}
+U <- svdptd$u #The matrix of the EOF spatial patterns
+V <- svdptd$v #The matrix of the PC temporal patterns
+D <- diag(svdptd$d) #The diagonal matrix of standard deviations 
+recontada <- U%*%D%*%t(V) #Verify the SVD decomposition
+svd_error <- ptada - recontada
+max(svd_error)
+min(svd_error)
+```
+
+<p>&nbsp;</p>
+### Plot WSOI1
+```{r}
+#setEPS()
+#postscript("fig0403a.eps", height = 4.9, width = 7)
+par(mar = c(4,4.2,2.0,0.5))
+xtime <- seq(1951, 2016-1/12, 1/12)
+wsoi1 <- D[1,1]*t(V)[1,]
+plot(xtime, wsoi1,type = "l", cex.lab = 1.2, cex.axis = 1.2,
+     xlab = "Year",ylab = "WSOI1", 
+     col = "black",xlim = range(xtime), ylim = c(-4,4))
+axis (3, at = seq(1951,2015,4), labels = seq(1951,2015,4))
+text(1985,-3.7,"Weighted SOI1 Index", cex = 1.2)
+text(1952,3.5, "(a)", cex = 1.2)
+# dev.off()
+```
+
+<p>&nbsp;</p>
+### Plot WSOI2
+```{r}
+#setEPS()
+#postscript("fig0403b.eps", height = 4.9, width = 7)
+par(mar = c(4,4.2,2.0,0.5))
+xtime <- seq(1951, 2016-1/12, 1/12)
+wsoi2 <- D[2,2]*t(V)[2,]
+plot(xtime, wsoi2,type = "l", cex.lab = 1.3, cex.axis = 1.3,
+     xlab = "Year",ylab = "WSOI2", 
+     col = "blue",xlim = range(xtime), ylim = c(-4,4))
+axis (3, at = seq(1951,2015,4), labels = seq(1951,2015,4))
+text(1985,-3.7,"Weighted SOI2 Index", cex = 1.5)
+text(1952,3.5, "(b)", cex = 1.3)
+# dev.off()
+```
+
+<p>&nbsp;</p>
+### Cumulative WSOIs
+```{r}
+setwd("~/sshen/climmath/")
+#setEPS()
+#postscript("fig0403c.eps", height = 4.9, width = 7)
+par(mar = c(4,4.2,2.0,4.2))
+cwsoi1 <- cumsum(wsoi1)
+plot(xtime, cwsoi1,type = "l",cex.lab = 1.2, cex.axis = 1.2,
+     xlab = "Year",ylab = "Weighted SOI1", 
+     col = "black",lwd = 3, ylim = c(-200,50),
+     main = "Comparison between CWSOI1 and the Smoothed AMO Index")
+text(1951,40, "(c)", cex = 1.3)
+#axis (3, at = seq(1951,2015,4), labels = seq(1951,2015,4))
+legend(1970,20, col = c("black"),lty = 1,lwd = 3.0,
+       legend = c("CWSOI1"),bty = "n",text.font = 2,cex = 1.2)
+#Superimpose CSOI time series on this CWSOI1
+cnegsoi <- -cumsum(ptamonv-pdamonv)
+lines(xtime, cnegsoi,type = "l",col = "purple", lwd = 3.0)
+legend(1970,2, col = c("purple"),lty = 1,lwd = 3.0,
+       legend = c("CSOI"),bty = "n",text.font = 2,cex = 1.2)
+#24-month ahead moving average of the monthly AMO index
+amodat <- read.table("data/AMO1951-2015.txt", header = FALSE)
+amots <- as.vector(t(amodat[,2:13]))
+#install.packages("TTR")
+library("TTR")
+amomv <- SMA(amots,n = 24, fill = NA) 
+#Average of the previous n points
+par(new = TRUE)
+xtime <- seq(1951,2015,len = 780)
+plot(xtime, amomv[37:816],type = "l",col = "darkgreen",
+     lwd = 3,axes = FALSE,xlab = "",ylab = "",
+     cex.lab = 1.2, cex.axis = 1.2,
+     ylim = c(-0.5, 0.5))
+legend(1970,0.23, col = c("darkgreen"),lty = 1,lwd = 3.0,
+       legend = c("AMO index"),bty = "n",text.font = 2,cex = 1.2)
+#Suppress the axes and assign the y-axis to side 4
+axis(4, cex.axis = 1.2, col.axis = "darkgreen")
+mtext("Smoothed AMO index",
+      side = 4,line = 3, cex = 1.2, col = "darkgreen")
+# dev.off()
+
+```
+
+<p>&nbsp;</p>
+### Plot cumulative WSOI2: CWSOI2
+```{r}
+#setEPS()
+#postscript("fig0403d.eps", height = 4.9, width = 7)
+par(mar = c(4,4.2,2.0,0.5))
+cwsoi1 <- cumsum(wsoi1)
+wsoi2 <- D[2,2]*t(V)[2,]
+cwsoi2 <- cumsum(wsoi2)
+plot.new()
+# par(mar = c(4,4,3,4))
+plot(xtime, cwsoi2,type = "l",xlab = "Year",ylab = "CWSOI2", 
+     cex.lab = 1.2, cex.axis = 1.2,
+     col = "blue",lwd = 3, ylim = c(-200,50),
+     main = "CWSOI2 Index: The Cumulative PC2")
+text(1951,40, "(d)", cex = 1.3)
+# dev.off()
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 4.4
+```{r}
+#Display the two ENSO modes on a world map
+library(maps)
+library(mapdata)
+
+plot.new()
+par(mfrow = c(2,1))
+
+par(mar = c(0,0,0,0)) #Zero space between (a) and (b)
+map(database = "world2Hires",ylim = c(-70,70), mar = c(0,0,0,0))
+grid(nx = 12,ny = 6)
+points(231, -18,pch = 16,cex = 2, col = "red")
+text(231, -30, "Tahiti 0.61", col = "red")
+points(131, -12,pch = 16,cex = 2.6, col = "blue")
+text(131, -24, "Darwin -0.79", col = "blue")
+axis(2, at = seq(-70,70,20),
+     col.axis = "black", tck = -0.05, las = 2, line = -0.9,lwd = 0)
+axis(1, at = seq(0,360,60),
+     col.axis = "black",tck = -0.05, las = 1, line = -0.9,lwd = 0)
+text(180,30, "El Nino Southern Oscillation Mode 1",col = "purple",cex = 1.3)
+text(10,-60,"(a)", cex = 1.4)
+box()
+
+# par(mar = c(0,0,0,0)) #Plot mode 2
+map(database = "world2Hires", ylim = c(-70,70), mar = c(0,0,0,0))
+grid(nx = 12,ny = 6)
+points(231, -18,pch = 16,cex = 2.6, col = "red")
+text(231, -30, "Tahiti 0.79", col = "red")
+points(131, -12,pch = 16,cex = 2, col = "red")
+text(131, -24, "Darwin 0.61", col = "red")
+text(180,30, "El Nino Southern Oscillation Mode 2",col = "purple",cex = 1.3)
+axis(2, at = seq(-70,70,20),
+     col.axis = "black", tck = -0.05, las = 2, line = -0.9,lwd = 0)
+axis(1, at = seq(0,360,60),
+     col.axis = "black",tck = -0.05, las = 1, line = -0.9,lwd = 0)
+text(10,-60,"(b)", cex = 1.4)
+box()
+```
+
+<p>&nbsp;</p>
+### An example of multivariate regression
+```{r}
+x1 <- c(1,2,3) #Given the coordinates of the 3 points
+x2 <- c(2,1,3)
+y <- c(-1,2,1)
+df <- data.frame(x1,x2,y) #Put data into the data.frame format
+fit <- lm(y ~ x1 + x2, data = df)
+fit #Show the regression results
+
+1.667*x1-1.333*x2 #Verify that 3 points determining a plane
+```
+
+<p>&nbsp;</p>
+### Multivariate regression with four data points
+```{r}
+u <- c(1,2,3,1)
+v <- c(2,4,3,-1)
+w <- c(1,-2,3,4)
+mydata <- data.frame(u,v,w)
+myfit <- lm(w ~ u + v, data = mydata)
+summary(myfit) #Show the result
+```
+
+<p>&nbsp;</p>
+### Another example of multivariate regregression
+```{r}
+dat <- matrix(rnorm(40),nrow = 10, dimnames = list(c(letters[1:10]), c(LETTERS[23:26])))
+fdat <- data.frame(dat)
+fit <- lm(Z ~ W + X + Y, data = fdat)
+summary(fit)
+```
