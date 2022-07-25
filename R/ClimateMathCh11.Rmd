@@ -1,0 +1,503 @@
+---
+title: "&nbsp;"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+<center><h1>R Code for Climate Mathematics:</h1></center>
+<center><h1>Theory and Applications</h1></center>
+<p>&nbsp;</p>
+<center><h3>A Cambridge University Press book By</h3></center>
+<center><h3>SSP Shen and RCJ Somerville</h3></center>
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+<div align="center">Version 1.0 released in July 2019 and coded by Dr. Samuel Shen, Distinguished Professor</div>
+<div align="center">San Diego State University, California, USA</div> 
+<div align="center"><https://shen.sdsu.edu></div> 
+<div align="center">Email: <sshen@sdsu.edu></div> 
+<p>&nbsp;</p>
+<div align="center">Version 2.0 compiled and updated by Momtaza Sayd</div> 
+<div align="center">San Diego State University May 2021</div>
+<div align="center">Version 3.0 compiled and updated by Joaquin Stawsky</div>
+<div align="center">San Diego State University June 2022</div>
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+## Chapter 11: Climate Data Matrices and Linear Algebra
+
+### Read NOAAGlobalTemp and form the space-time data matrix
+```{r}
+#NOAAGlobalTemp dataset since 1880: A merged land SAT and ocean SST anomalies
+#The monthly 5-deg gridded data and their global average can be 
+#downloaded from the NOAA website.
+#The gridded data has 43MB
+#The data can also be downloaded from the website of this book
+#https://climatemathematics.sdsu.edu
+#The file name is NOAAGlobalTemp.gridded.v4.0.1.201701.asc
+
+rm(list = ls(all = TRUE))
+# Download .asc file
+#.asc is an ASCII data format
+#This book uses "scan" to read the asc data
+#and then write the data into a space-time matrix
+#Climate Mathematics treats space-time matrix as 
+#its data standard while big climate data use .nc
+
+setwd("~/sshen/climmath/data")
+da1 <- scan("NOAAGlobalTemp.gridded.v4.0.1.201701.asc")
+#From Jan 1880 to Jan 2017
+length(da1)
+#[1] 4267130
+da1[1:3]
+#[1]    1.0 1880.0 -999.9 #means month, year, temp
+#data in 72 rows (2.5, ..., 357.5) and 
+#data in 36 columns (-87.5, ..., 87.5)
+tm1 <- seq(1,4267129, by = 2594)
+tm2 <- seq(2,4267130, by = 2594)
+length(tm1)
+length(tm2)
+mm1 <- da1[tm1] #Extract months
+yy1 <- da1[tm2] #Extract years
+head(mm1)
+head(yy1)
+length(mm1)
+length(yy1)
+rw1 <- paste(yy1, sep = "-", mm1) #Combine YYYY with MM
+head(tm1)
+head(tm2)
+tm3 <- cbind(tm1,tm2)
+tm4 <- as.vector(t(tm3))
+head(tm4)
+#[1]    1    2 2595 2596 5189 5190
+da2 <- da1[-tm4] #Remote the months and years data from the scanned data
+length(da2)/(36*72)
+#[1] 1645 #months, 137 yrs 1 mon: Jan 1880-Jan 2017
+da3 <- matrix(da2,ncol = 1645) #Generate the space-time data
+#2592 ( = 36*72) rows and 1645 months ( = 137 yrs 1 mon)
+dim(da3)
+#[1] 2592 1645
+
+#Put space-time coordinates in the space-time data da3
+colnames(da3) <- rw1
+lat1 <- seq(-87.5, 87.5, length = 36)
+lon1 <- seq(2.5, 357.5,  length = 72)
+LAT <- rep(lat1, each = 72)
+LON <- rep(lon1,36)
+gpcpst <- cbind(LAT, LON, da3)
+#head(gpcpst)
+dim(gpcpst)
+#[1] 2592 1647 #The first two columns are Lat and Lon
+#-87.5 to 87.5 and then 2.5 to 375.5
+#The first row for time is header, not counted as data.
+gpcpst[1:3,1:6] #Part of the data
+#       LAT  LON 1880-1 1880-2 1880-3 1880-4
+#[1,] -87.5  2.5 -999.9 -999.9 -999.9 -999.9
+#[2,] -87.5  7.5 -999.9 -999.9 -999.9 -999.9
+#[3,] -87.5 12.5 -999.9 -999.9 -999.9 -999.9
+
+write.csv(gpcpst,file = "NOAAGlobalT.csv")
+#Output the data as a csv file
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 11.4: Dec 2015 global surface temperature anomalies map
+```{r,fig.width = 8, fig.height = 5}
+library(maps) # install maps package first if not done before
+Lat <- seq(-87.5, 87.5, length = 36)
+Lon <- seq(2.5, 357.5, length = 72)
+mapmat <- matrix(gpcpst[,1634],nrow = 72)
+#column 1634 corresponding to Dec 2015
+#Convert the vector into a lon-lat matrix for R map plotting
+mapmat <- pmax(pmin(mapmat,6),-6) #Put values between -6 and 6
+#Matrix flipping is not needed since the data go from 2.5 to 375.5
+#plot.new()
+par(mar = c(4,5,3,0))
+int <- seq(-6,6,length.out = 81)
+rgb.palette <- colorRampPalette(c('black','blue', 'darkgreen','green', 
+                               'yellow','pink','red','maroon'),interpolate = 'spline')
+filled.contour(Lon, Lat, mapmat, color.palette = rgb.palette, levels = int,
+               plot.title = title(main = "NOAAGlobalTemp Anomalies Dec. 2015 [°C]",
+                                xlab = "Longitude",ylab = "Latitude", cex.lab = 1.5),
+               plot.axes = {axis(1, cex.axis = 1.25); 
+                 axis(2, cex.axis = 1.25);map('world2', add = TRUE);grid()},
+               key.title = title(main = "[°C]"),
+               key.axes = {axis(4, cex.axis = 1.25)})
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 11.5: Dec 1997 tropical Pacific SST anomalies map
+```{r,fig.width = 8, fig.height = 5}
+#Select only the data for the tropical Pacific region
+n2 <- which(gpcpst[,1]>-20&gpcpst[,1]<20&gpcpst[,2]>160&gpcpst[,2]<260)
+dim(gpcpst)
+length(n2)
+#[1] 160 ( = 8 latitude bends and 20 longitude bends)
+pacificdat <- gpcpst[n2,855:1454]
+
+#plot.new()
+Lat <- seq(-17.5,17.5, by = 5)
+Lon <- seq(162.5, 257.5, by = 5)
+par(mar = c(4,5,3,0))
+mapmat <- matrix(pacificdat[,564], nrow = 20)
+int <- seq(-5,5,length.out = 81)
+rgb.palette <- colorRampPalette(c('black','blue', 'darkgreen',
+                               'green', 'yellow','pink','red','maroon'),
+                             interpolate = 'spline')
+mapmat <- mapmat[,seq(length(mapmat[1,]),1)]
+filled.contour(Lon, Lat, mapmat, color.palette = rgb.palette, levels = int,
+               xlim = c(120,300),ylim = c(-40,40),
+               plot.title = title(main = "Tropic Pacific SAT Anomalies [°C]: Dec. 1997",
+                                xlab = "Longitude",ylab = "Latitude", cex.lab = 1.25),
+               plot.axes = {axis(1, cex.axis = 1.25); axis(2, cex.axis = 1.25);
+                 map('world2', add = TRUE);grid()},
+               key.title = title(main = "[°C]"),
+               key.axes = {axis(4, cex.axis = 1.25)})
+```
+
+```{r}
+#Extract data for a specified box with given lat and lon
+n2 <- which(gpcpst[,1] == 32.5&gpcpst[,2] == 242.5)
+SanDiegoData <- gpcpst[n2,855:1454]
+plot(seq(1880,2017, len = length(SanDiegoData)), 
+     SanDiegoData, type = "l", 
+     xlab = "Year", ylab = "Temperature [°C]",
+     main = "San Diego Temperature Anomalies History")
+lm(SanDiegoData ~ seq(1880,2017, len = length(SanDiegoData)))
+```
+
+
+```{r}
+n2 <- which(gpcpst[,1] == 52.5&gpcpst[,2] == 247.5)
+EdmontonData <- gpcpst[n2,855:1454]
+plot(seq(1880,2017, len = length(EdmontonData)), 
+     EdmontonData, type = "l", 
+     xlab = "Year", ylab = "Temperature [°C]",
+     main = "Temperature Anomalies History of Edmonton, Canada")
+lm(EdmontonData ~ seq(1880,2017, len = length(EdmontonData)))
+
+#Compute the area-weighted average of the gridded data
+#36-by-72 boxes and Jan1880-Jan2016 = 1633 months + lat and lon
+#Compute the area-weight for each box and each month 
+#that has data. Thus the area-weight is a matrix.
+areaw <- matrix(0,nrow = 2592,ncol = 1647)
+dim(areaw)
+#[1] 2592 1647
+temp <- gpcpst
+areaw[,1] <- temp[,1]
+areaw[,2] <- temp[,2]
+veca <- cos(areaw[,1]*pi/180) #convert deg into radian
+#create an area-weight matrix equal to cosine for the box with data
+#and zero for the box with missing data
+for(j in 3:1647) {for (i in 1:2592) {if(temp[i,j]> -290.0) {areaw[i,j] = veca[i]} }} 
+
+#area-weight data matrix's first two columns as lat-lon
+tempw <- areaw*temp
+tempw[,1:2] <- temp[,1:2]
+#create monthly global average vector for 1645 months
+#Jan 1880-Jan 2017
+avev <- colSums(tempw[,3:1647])/colSums(areaw[,3:1647])
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 11.6: Global average temperature and its trend
+```{r}
+plot.new()
+timemo <- seq(1880,2017,length = 1645)
+par(mar = c(3.5,3.5,3,0.5))
+par(mgp = c(2.3,1.0,0.0))
+plot(timemo,avev,type = "l", cex.lab = 1.25,
+     xlab = "Year", ylab = "Temperature Anomaly [°C]",
+     main = "Area-weighted Global Average of Monthly\nSAT Anomalies: Jan. 1880-Jan. 2017")
+abline(lm(avev ~ timemo),col = "blue",lwd = 2)
+text(1930,0.7, "Linear trend: 0.69 [°C]/Century",
+     cex = 1.25, col = "blue")
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 11.7: Compare the warming trends of Edmonton and San Diego
+```{r}
+#Extract data for a specified box with given lat and lon
+n2 <- which(gpcpst[,1] == 52.5&gpcpst[,2] == 247.5)
+dedm <- gpcpst[n2,855:1454]
+t <- seq(1880,2017, len = length(dedm))
+par(mar = c(4,4.5,2.5,1))
+plot(t, dedm, type = "l", ylim = c(-15,15),col = "red",
+     cex.lab = 1.15, cex.axis = 1.15,
+     xlab = "Year", ylab = "Temperature Anomalies [°C]")
+title("Monthly Temperature Anomalies History of\nEdmonton, Canada, and San Diego, USA",
+      line = 0.5,cex.main = 1.25)
+regedm <- lm(dedm ~ t)
+abline(regedm,col = "red", lwd = 3)
+
+#San Diego data
+n3 <- which(gpcpst[,1] == 32.5&gpcpst[,2] == 242.5)
+dsan <- gpcpst[n3,855:1454]
+lines(t, dsan, type = "l", col = "blue")
+regsan <- lm(dsan ~ t)
+abline(regsan, col = "blue", lwd = 3)
+
+legend(1880,16, col = c("red","blue"),lty = 1,lwd = 2.0,
+       legend = c("Edmonton, Canada: Trend 1.18 °C/Century, SD 3.01 °C", 
+                "San Diego, USA: Trend 0.76 °C/Century, SD 0.87 °C"),
+       bty = "n",text.font = 2,cex = 1.15)
+
+regedm
+#0.01178  #Edmonton trend
+regsan
+#0.007624  #San Diego trend
+sd(dedm)
+#[1] 3.006863
+sd(dsan)
+#[1] 0.8653399
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 11.8: Display the trends of 12 months using 12 panels on the same figure
+```{r,fig.width = 10, fig.height = 12}
+#Read directly from the NCEI URL for the NOAAGlobalTemp monthly global average data:  
+#You need to find the link to the data file.
+#Data file: aravg.mon.land_ocean.90S.90N.v4.0.1.201703.txt
+setwd("~/sshen/climmath/data")
+aveNCEI <- read.table("aravg.mon.land_ocean.90S.90N.v4.0.1.201703.txt", 
+                      header = FALSE)
+dim(aveNCEI) #Jan 1880-Feb 2017 #an extra month to be deleted
+#[1] 1647   10
+par(mar = c(4,5,2,1))
+timemo <- seq(aveNCEI[1,1],aveNCEI[length(aveNCEI[,1]),1],len = length(aveNCEI[,1]) )
+#create matrix of 136 yrs of data matrix
+# row = year from 1880 to 2016, col = mon 1 to 12
+ave <- aveNCEI[,3]
+myear <- length(ave)/12
+nyear <- floor(myear)
+nmon <- nyear*12
+avem <- matrix(ave[1:nmon], ncol = 12, byrow = TRUE)
+
+#compute annual average
+annv <- seq(0,length = nyear)
+for(y in 1:nyear){annv[y] <- mean(avem[y,])}
+
+#Put the monthly averages and annual ave in a matrix
+avemy <- cbind(avem,annv)
+#Plot 12 panels on the same figure: Trend for each month
+dev.off()
+#quartz(width = 10,height = 16, pointsize = 16)
+#quartz(display = "name", width = 5, height = 5, pointsize = 12,
+#       family = "Helvetica", antialias = TRUE, autorefresh = TRUE)
+plot.new()
+#png(file = 'monthtrend.png') #Automatically saving figure
+timeyr <- seq(aveNCEI[1,1], aveNCEI[1,1]+nyear-1)
+par(mfrow = c(4, 3))  # 4 rows and 3 columns
+par(mgp = c(2,1,0))
+for (i in 1:12) { 
+  plot(timeyr, avemy[,i],type = "l", ylim = c(-1.0,1.0),
+       xlab = "Year",ylab = "Temperature [°C]", cex.lab = 1.15,
+       main = paste("Month =", i, split = ""))
+  abline(lm(avemy[,i]~timeyr),col = "red")
+  text(1945,0.7, paste("Trend = ", 
+                       round(digits = 3,
+                      (100*coefficients(lm(avemy[,i]~timeyr))[2]))," °C/Century" ),
+                      col = "red", cex = 1.25)
+}
+#dev.off()
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 11.9: Global average annual mean SAT anomalies
+```{r}
+par(mar = c(4,4.5,3,1.0))
+avem <- matrix(avev[1:1644], ncol = 12, byrow = TRUE)
+#compute annual average
+annv <- rowMeans(avem)
+#Plot the annual mean global average temp
+timeyr <- seq(1880, 2016)
+plot(timeyr,annv,type = "s", 
+     cex.lab = 1.,cex.axis = 1, lwd = 2,
+     xlab = "Year", ylab = "Temperature Anomaly [°C]",
+     )
+title("Area-weighted Global Average of Annual\nSAT Anomalies: 1880-2016", line = 0.5,cex.main = 1.15)
+abline(lm(annv ~ timeyr),col = "blue",lwd = 2)
+text(1923,0.4, "Linear trend: 0.69 [°C]/Century",
+     cex = 1, col = "blue")
+text(1900,0.07, "Base line",cex = 1, col = "red")
+lines(timeyr,rep(0,137), type = "l",col = "red")
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 11.10: Fit polynomials to the global average annual mean
+```{r}
+#Polynomial fitting to the global average annual mean
+#poly9<-lm(annv ~ poly(timeyr,9, raw =  TRUE))
+#raw = TRUE means regular polynomial a0+a1x^2+..., non-orthogonal 
+polyor9 <- lm(annv ~ poly(timeyr,9, raw = FALSE))
+polyor20 <- lm(annv ~ poly(timeyr,20, raw = FALSE))
+#raw = FALSE means orthogonal polynomial of 9th order
+#Orthogonal polynomial fitting is usually better
+par(mar = c(4,4,3,2))
+plot(timeyr,annv,type = "s", 
+     cex.lab = 1.05,cex.axis = 1.05,cex.main = 1.25, lwd = 2,
+     xlab = "Year", ylab = "Temperature Anomaly [°C]",
+     main = "Annual SAT Time Series and its Orthogonal\nPolynomial Fits: 1880-2016")
+lines(timeyr,predict(polyor9),col = "blue", lwd = 3)
+legend(1880, 0.6,  col = c("blue"),lty = 1,lwd = 1.0, 
+       legend = c("9th Order Orthogonal Polynomial Fit"),
+       bty = "n",text.font = 2,cex = 1.05)
+lines(timeyr,predict(polyor20),col = "red", lwd = 3)
+legend(1880, 0.7, col = c("red"),lty = 1,lwd = 1.0, 
+       legend = c("20th Order Orthogonal Polynomial Fit"),
+       bty = "n",text.font = 2,cex = 1.05)
+
+#Deal with missing data NA
+x <- 1:8
+y <- c(2,4,NA,3,6.8,NA,NA,9) 
+fitted(lm(y ~ x, na.action = na.exclude))
+#  1    2    3    4    5    6    7    8 
+#2.08 3.04   NA 4.96 5.92   NA   NA 8.80 
+##
+fitted(lm(y ~ x, na.action = na.omit))
+#  1    2    4    5    8 
+#2.08 3.04 4.96 5.92 8.80 
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 11.11: Spatial pattern of the linear temporal trend
+```{r,fig.width = 8, fig.height = 5}
+#No missing data for the first month (January 1900) and 
+#the last month (December 1999)
+
+#Compute the trend for each box for the 20th century
+timemo1 <- seq(1900,2000, len = 1200)
+temp1 <- temp
+temp1[temp1 < -490.00] <- NA
+trendgl <- rep(0,2592)
+for (i in 1:2592){
+  if(is.na(temp1[i,243]) == FALSE & is.na(temp1[i,1442]) == FALSE) 
+  {trendgl[i] <- lm(temp1[i,243: 1442] ~ timemo1, na.action = na.omit)$coefficients[2]} 
+  else 
+  {trendgl[i] <- NA}
+}
+library(maps)
+Lat <- seq(-87.5, 87.5, length = 36)
+Lon <- seq(2.5, 357.5, length = 72)
+mapmat <- matrix(100*trendgl,nrow = 72)
+mapmat <- pmax(pmin(mapmat,2),-2)
+#Matrix flipping is not needed since the data goes from 2.5 to 375.5
+plot.new()
+#par(mar = c(4.5,4.5,3,0))
+int <- seq(-2,2,length.out = 21)
+rgb.palette <- colorRampPalette(c('black','blue', 'darkgreen','green', 
+                               'yellow','pink','red','maroon'),interpolate = 'spline')
+#mapmat <- mapmat[,seq(length(mapmat[1,]),1)]
+filled.contour(Lon, Lat, mapmat, color.palette = rgb.palette, levels = int,
+               plot.title = title(main = "Jan. 1900-Dec. 1999 Temperature Trends: [°C/Century]",
+                                xlab = "Longitude",ylab = "Latitude", cex.lab = 1.25),
+               plot.axes = {axis(1, cex.axis = 1.25); axis(2, cex.axis = 1.25);
+                          map('world2', add = TRUE);grid()},
+               key.title = title(main = ""),
+               key.axes = {axis(4, cex.axis = 1.25)})
+
+#Example of computing the trend for a grid bbox
+i <- 600
+timemo1 <- seq(1900, 1999, length = 1200)
+lm(temp1[i,243:1442] ~ timemo1, na.action = na.omit)
+lm(temp1[i,243:1442] ~ timemo1, na.action = na.exclude)
+#temp1[i,243:1442]
+# 1900-1  1900-2  1900-3  1900-4  1900-5
+#-0.7457      NA -1.4406 -1.0936 -0.8193
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 11.12: Spatial pattern of the linear temporal trend
+```{r,fig.width = 8, fig.height = 5}
+#under a relaxed condition: allowing up to 1/3 data missing
+
+#Trend for each box for the 20th century: Version 2: Allow 2/3 of data
+#Compute the trend
+timemo1 <- seq(1900,2000, len = 1200)
+temp1 <- temp[,243:1442]
+temp1[temp1 < -490.00] <- NA
+temptf <- is.na(temp1)
+bt <- et <- rep(0,2592)
+for (i in 1:2592) {
+  if (length(which(temptf[i,] == FALSE)) != 0)
+  {bt[i] <- min(which(temptf[i,] == FALSE))
+    et[i] <- max(which(temptf[i,] == FALSE))}
+}
+
+trend20c <- rep(0,2592)
+for (i in 1:2592){
+  if(et[i]-bt[i] > 800) 
+  {trend20c[i] <- lm(temp1[i,bt[i]:et[i]] ~ seq(bt[i],et[i]), 
+                  na.action = na.omit)$coefficients[2]} 
+  else 
+  {trend20c[i] <- NA}
+}
+#plot the 20C V2 trend map 
+plot.new()
+#par(mar = c(4,5,3,0))
+mapmat <- matrix(120*trend20c,nrow = 72)
+mapmat <- pmax(pmin(mapmat,0.2),-0.2)
+int <- seq(-0.2,0.2,length.out = 41)
+rgb.palette <- colorRampPalette(c('black','blue', 'darkgreen','green', 
+                               'yellow','pink','red','maroon'),interpolate = 'spline')
+filled.contour(Lon, Lat, mapmat, color.palette = rgb.palette, levels = int,
+               plot.title = title(main = "Jan. 1900-Dec. 1999 Temperature Trends: [°C/Decade]",
+                                xlab = "Longitude",ylab = "Latitude", cex.lab = 1.25),
+               plot.axes = {axis(1, cex.axis = 1.25); axis(2, cex.axis = 1.25);
+                 map('world2', add = TRUE);grid()},
+               key.title = title(main = ""),
+               key.axes = {axis(4, cex.axis = 1.25)})
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 11.13: Map of the 1976-2016 trend of monhtly data
+```{r,fig.width = 8, fig.height = 5}
+timemo2 <- seq(1976,2017, len = 492)
+temp1 <- temp
+temp1[temp1 < -490.00] <- NA
+trend7616 <- rep(0,2592)
+for (i in 1:2592){
+  if(is.na(temp1[i,1155]) == FALSE & is.na(temp1[i,1646]) == FALSE) 
+  {trend7616[i] <- lm(temp1[i,1155: 1646] ~ timemo2, na.action = na.omit)$coefficients[2]} 
+  else 
+  {trend7616[i] <- NA}
+}
+#plot the 1976-2016 trend map 
+plot.new()
+#par(mar = c(4.5,4.5,3,0))
+mapmat <- matrix(120*trend7616,nrow = 72)
+mapmat <- pmax(pmin(mapmat,4),-4)
+int <- seq(-4,4,length.out = 41)
+rgb.palette <- colorRampPalette(c('black','blue', 'darkgreen','green', 
+                               'yellow','pink','red','maroon'),interpolate = 'spline')
+filled.contour(Lon, Lat, mapmat, color.palette = rgb.palette, levels = int,
+               plot.title = title(main = "Jan. 1976-Dec. 2016 Temperature Trends: [°C/Decade]",
+                                xlab = "Longitude",ylab = "Latitude", cex.lab = 1.25),
+               plot.axes = {axis(1, cex.axis = 1.25); axis(2, cex.axis = 1.25);
+               map('world2', add = TRUE);grid()}, key.title = title(main = ""),
+               key.axes = {axis(4, cex.axis = 1.25)})
+```
+
+<p>&nbsp;</p>
+### Appendix B: Cross Product 
+```{r}
+#GPS-Planimeter example: Compute the area of an ellipse based on
+#the coordinate data on the boundary using Green's Theorem
+n <- 1000
+a <- 4
+b <- 2
+t <- seq(0,2*pi,length = n+1)
+x <- a*cos(t)
+y <- b*sin(t)
+s <- rep(0,n)
+for (i in 1:n){s[i] <- -y[i]*x[i+1] + x[i]*y[i+1]}
+A <- 0.5*sum(s)
+A
+#[1] 25.13258
+#The aera of an ellipse according to the formula: pi ab
+pi*a*b
+#[1] 25.13274
+```

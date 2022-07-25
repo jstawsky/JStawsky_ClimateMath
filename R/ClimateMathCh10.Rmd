@@ -1,0 +1,678 @@
+---
+title: "&nbsp;"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+<center><h1>R Code for Climate Mathematics:</h1></center>
+<center><h1>Theory and Applications</h1></center>
+<p>&nbsp;</p>
+<center><h3>A Cambridge University Press book By</h3></center>
+<center><h3>SSP Shen and RCJ Somerville</h3></center>
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+<div align="center">Version 1.0 released in July 2019 and coded by Dr. Samuel Shen, Distinguished Professor</div>
+<div align="center">San Diego State University, California, USA</div> 
+<div align="center"><https://shen.sdsu.edu></div> 
+<div align="center">Email: <sshen@sdsu.edu></div> 
+<p>&nbsp;</p>
+<div align="center">Version 2.0 compiled and updated by Momtaza Sayd</div> 
+<div align="center">San Diego State University May 2021</div>
+<div align="center">Version 3.0 compiled and updated by Joaquin Stawsky</div>
+<div align="center">San Diego State University June 2022</div>
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+## Chapter 10: Advanced R Analysis and Plotting: EOFs, Trends, and Global Data
+
+### Fig. 10.1
+```{r}
+x <- seq(0, 2*pi, len = 100)
+y <- seq(0, 2*pi, len = 100)
+mydat <- array(0,dim = c(100,100,10))
+for(t in 1:10){
+  z <- function(x,y){z <- sin(t)*(1/pi)*sin(x)*sin(y)+exp(-0.3*t)*(1/pi)*sin(8*x)*sin(8*y)}
+  mydat[,,t] <- outer(x,y,z)
+}
+
+#Plot the original z(x,y,t) waves for a given t
+filled.contour(x,y,mydat[,,10], color.palette = rainbow, 
+               plot.title = title(main = "Original field at t = 10", 
+                                xlab = "x", ylab = "y", cex.lab = 1.2),
+               key.title = title(main = "Scale"),
+               plot.axes =  {axis(1,seq(0,3*pi, by = 1), cex = 1.2) 
+                 axis(2,seq(0, 2*pi, by = 1), cex = 1.2)}
+)
+
+#Space-time data decomposition by SVD
+da1 <- matrix(0,nrow = length(x)*length(y),ncol = 10)
+for (i in 1:10) {da1[,i] = c(t(mydat[,,i]))}
+da2 <- svd(da1)
+uda2 <- da2$u
+vda2 <- da2$v
+dda2 <- da2$d
+dda2
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 10.2
+```{r}
+#Plot EOF modes
+#Plot EOF1
+par(mar = c(4,4,2.5,4))
+par(mgp = c(2,1,0))
+int <- seq(-0.3,0.3,length.out = 21)
+rgb.palette <- colorRampPalette(c('black','purple','blue','white', 
+                               'green', 'yellow','pink','red','maroon'),
+                             interpolate = 'spline')
+filled.contour(x,y,matrix(-uda2[,1],nrow = 100), color.palette = rgb.palette,
+               plot.title = title(main = "SVD Mode 1: EOF1", 
+                                xlab = "x", ylab = "y", cex.lab = 1.2),
+               key.title = title(main = "Scale"),
+               plot.axes = {axis(1,seq(0,2*pi, by = 1), cex = 1.2) 
+                 axis(2,seq(0, 2*pi, by = 1), cex = 1.2)})
+#Plot EOF2
+par(mar = c(4,4,2.5,4))
+par(mgp = c(2,1,0))
+int <- seq(-0.3,0.3,length.out = 21)
+rgb.palette <- colorRampPalette(c('black','purple','blue','white', 
+                               'green', 'yellow','pink','red','maroon'),
+                             interpolate = 'spline')
+filled.contour(x,y,matrix(-uda2[,2],nrow = 100), color.palette = rgb.palette,
+               plot.title = title(main = "SVD Mode 2: EOF2", 
+                                xlab = "x", ylab = "y", cex.lab = 1.2),
+               key.title = title(main = "Scale"),
+               plot.axes =  {axis(1,seq(0,2*pi, by = 1), cex = 1.2) 
+                 axis(2,seq(0, 2*pi, by = 1), cex = 1.2)})
+
+#Plot the theoretical orthogonal modes
+z1 <- function(x,y){(1/pi)*sin(x)*sin(y)}
+z2 <- function(x,y){(1/pi)*sin(8*x)*sin(8*y)}
+fcn1 <- outer(x,y,z1)
+fcn2 <- outer(x,y,z2)
+#Plot accurate Mode 1
+par(mar = c(4,4,2.5,4))
+par(mgp = c(2,1,0))
+int <- seq(-0.3,0.3,length.out = 21)
+rgb.palette <- colorRampPalette(c('black','purple','blue','white', 
+                               'green', 'yellow','pink','red','maroon'),
+                             interpolate = 'spline')
+#color.palette  = rainbow
+filled.contour(x,y,fcn1, color.palette = rgb.palette,
+               plot.title = title(main = "Accurate Mode 1", 
+                                xlab = "x", ylab = "y", cex.lab = 1.2),
+               key.title = title(main = "Scale"),
+               plot.axes =  {axis(1,seq(0,3*pi, by = 1), cex = 1.2) 
+                 axis(2,seq(0, 2*pi, by = 1), cex = 1.2)}
+)
+```
+
+<p>&nbsp;</p>
+### Plot accurate Mode 2
+```{r}
+par(mar = c(4,4,2.5,4))
+par(mgp = c(2,1,0))
+int = seq(-0.3,0.3,length.out = 21)
+rgb.palette = colorRampPalette(c('black','purple','blue','white', 
+                               'green', 'yellow','pink','red','maroon'),
+                             interpolate = 'spline')
+filled.contour(x,y,fcn2, color.palette = rgb.palette, 
+               plot.title = title(main = "Accurate Mode 2", 
+                                xlab = "x", ylab = "y", cex.lab = 1.2),
+               key.title = title(main = "Scale"),
+               plot.axes =  {axis(1,seq(0,3*pi, by = 1), cex = 1.2) 
+                 axis(2,seq(0, 2*pi, by = 1), cex = 1.2)}
+)
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 10.3
+```{r,fig.width = 7,fig.height = 5}
+#Plot PCs and coefficients of the functional patterns
+t <- 1:10
+plot(t, vda2[,1],type = "o", ylim = c(-1,1), lwd = 2, 
+     ylab = "PC or Coefficient", xlab = "Time",
+     main = "SVD PCs vs. Accurate Temporal Coefficients")
+legend(1,.7, lty = 1, legend = c("PC1: 83% variance"), 
+       bty = "n",col = c("black"))
+lines(t, vda2[,2],type = "o", col = "red", lwd = 2)
+legend(1,.55, lty = 1, legend = c("PC2: 17% variance"), 
+       col = "red", bty = "n",text.col = c("red"))
+lines(t, -sin(t), col = "blue", type = "o")
+legend(1,1, lty = 1, legend = c("Mode 1 Coefficient: 91% variance"), 
+       col = "blue", bty = "n",text.col = "blue")
+lines(t, -exp(-0.3*t), type = "o",col = "purple")
+legend(1,.85, lty = 1, legend = c("Mode 2 Coefficient: 9% variance"), 
+       col = "purple", bty = "n",text.col = "purple")
+```
+
+<p>&nbsp;</p>
+### Verify orthogonality of PCs 
+```{r}
+t(vda2[,1])%*%vda2[,2]
+#[1,] -1.665335e-16
+t <- 1:10
+t(-sin(t))%*%(-exp(-0.3*t))
+#[1,] 0.8625048
+
+#Data reconstruction by two modes
+B <- uda2[,1:2]%*%diag(dda2)[1:2,1:2]%*%t(vda2[,1:2])
+
+#Data reconstruction by all the ten modes
+B1 <- uda2%*%diag(dda2)%*%t(vda2)
+
+max(B-B1)
+#[1] 1.10875e-13 implies B = B1
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 10.4: The two-mode reconstruction by SVD
+```{r}
+#plot.new()
+filled.contour(x,y,matrix(B[,5],nrow = 100), color.palette = rainbow, 
+               plot.title = title(main = "2-mode SVD Reconstructed Field t = 5",
+                                xlab = "x", ylab = "y", cex.lab = 1.2),
+               key.title = title(main = "Scale"),
+               plot.axes = {axis(1,seq(0,3*pi, by = 1), cex = 1.2) 
+                 axis(2,seq(0, 2*pi, by = 1), cex = 1.2)})
+
+# Read netCDF data files
+#install.packages("ncdf")
+library(ncdf4)
+#Download netCDF dataset air.mon.mean.nc
+#https://climatemathematics.sdsu.edu/data/air.mon.mean.nc
+#Move air.mon.mean.nc to directory /Users/sshen/data
+# 4 dimensions: lon,lat,level,time
+setwd("~/sshen/climmath")
+nc = nc_open("data/air.mon.mean.nc")
+nc
+nc$dim$lon$vals #output lon values 0.0->357.5
+nc$dim$lat$vals #output lat values 90->-90
+nc$dim$time$vals #output time values in GMT hours: 1297320, 1298064, ...
+nc$dim$time$units
+#[1] "hours since 1800-01-01 00:00:0.0"
+# nc$dim$level$vals
+Lon <- ncvar_get(nc, "lon")
+Lat1 <- ncvar_get(nc, "lat")
+Time <- ncvar_get(nc, "time")
+#Time is the same as nc$dim$time$vals
+head(Time)
+#[1] 1297320 1298064 1298760 1299504 1300224 1300968
+library(chron)
+Tymd <- month.day.year(Time[1]/24,c(month = 1, day = 1, year = 1800))
+#c(month = 1, day = 1, year = 1800) is the reference time
+Tymd
+#$month
+#[1] 1
+#$day
+#[1] 1
+#$year
+#[1] 1948
+#1948-01-01
+precnc <- ncvar_get(nc, "air")
+dim(precnc)
+#[1] 144  73 826, i.e., 826 months=1948-01 to 2016-10, 68 years 10 mons
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 10.5
+```{r}
+#plot a 90S-90N temp along a meridional line at 180E
+par(mar = c(4,4,2.5,4))
+plot(seq(90,-90,length = 73),precnc[72,,1], type = "o", lwd = 2,
+     xlab = "Latitude", ylab = "Temperature [°C]",
+     main = "NCEP/NCAR Reanalysis Surface Air Temperature [°C]\nAlong a Meridional Line at 180°E: Jan. 1948")
+
+#Write data as a CSV space-time matrix with a header
+precst <- matrix(0,nrow = 10512,ncol = 826)
+temp <- as.vector(precnc[,,1])
+head(temp)
+for (i in 1:826) {precst[,i] = as.vector(precnc[ , , i])}
+dim(precst)
+#[1] 10512   826
+#Build lat and lon for 10512 spatial positions using rep
+LAT <- rep(Lat1, 144)
+LON <- rep(Lon[1],each = 73)
+gpcpst <- cbind(LAT, LON, precst)
+dim(gpcpst)
+#[1] 10512   828
+#The first two columns are lat and lon. 826 months: 1948.01-2016.10
+#Convert the Julian day and hour into calendar months for time 
+tm <- month.day.year(Time/24, c(month = 1, day = 1, year = 1800))
+tm1 <- paste(tm$year,"-",tm$month)
+tm2 <- c("Lat","Lon",tm1) #This is the header
+#Assign the header to the space-time data matrix
+colnames(gpcpst) <- tm2
+#setwd("~/sshen/climmath/data")
+#setwd routes the desired csv file to a given directory
+write.csv(gpcpst,file = "ncepJan1948_Oct2016.csv")
+```
+
+<p>&nbsp;</p>
+### Compute the January climatology and standard deviation: 1948-2015
+```{r}
+monJ <- seq(1,816,12)
+gpcpdat <- gpcpst[,3:818]
+gpcpJ <- gpcpdat[,monJ]
+climJ <- rowMeans(gpcpJ) #Use all 68 January's from 1948 to 2015
+library(matrixStats)# rowSds command is in the matrixStats package
+sdJ <- rowSds(gpcpJ)
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 9.9
+```{r,fig.width = 8, fig.height = 5.3}
+#Verify previous calculations and plots in Fig. 9.9
+#Plot Jan. climatology
+Lat <- -Lat1
+mapmat <- matrix(climJ,nrow = 144)
+mapmat<- mapmat[,seq(length(mapmat[1,]),1)]
+plot.new()
+int <- seq(-50,50,length.out = 81)
+rgb.palette <- colorRampPalette(c('black','blue', 'darkgreen','green', 
+                               'white','yellow','pink','red','maroon'),interpolate = 'spline')
+library(maps)
+filled.contour(Lon, Lat, mapmat, color.palette = rgb.palette, levels = int,
+               plot.title = title(main = "NCEP Jan. SAT RA 1948-2015 Climatology [°C]",
+                                xlab = "Longitude",ylab = "Latitude",
+                                cex.lab = 1.2,cex.axis = 1.2),
+               plot.axes = {axis(1); axis(2);map('world2', add = TRUE);grid()},
+               key.title = title(main = "[°C]"))
+```
+
+<p>&nbsp;</p>
+### Plot Jan Standard Deviation
+```{r,fig.width = 8, fig.height = 5.3}
+Lat = -Lat1
+mapmat = matrix(sdJ,nrow = 144)
+mapmat = pmax(pmin(mapmat,6),0)
+mapmat = mapmat[,seq(length(mapmat[1,]),1)]
+plot.new()
+int = seq(0,6,length.out = 91)
+rgb.palette = colorRampPalette(c('black','blue', 'green', 
+                               'yellow', 'pink','red','maroon'),interpolate = 'spline')
+filled.contour(Lon, Lat, mapmat, color.palette = rgb.palette, levels = int,
+               plot.title = title(main = "NCEP Jan. SAT RA 1948-2015 Standard Deviation [°C]", 
+               cex.lab = 1.2,cex.axis = 1.2, xlab = "Longitude",ylab = "Latitude"),
+               plot.axes = {axis(1); axis(2);map('world2', add = TRUE);grid()},
+               key.title = title(main = "[°C]"))
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 10.6 (Eigenvalues and variances explained)
+```{r}
+#Compute the Jan. EOFs
+monJ <- seq(1,816,12)
+gpcpdat <- gpcpst[,3:818]
+gpcpJ <- gpcpdat[,monJ]
+climJ <- rowMeans(gpcpJ)
+library(matrixStats)
+sdJ <- rowSds(gpcpJ)
+anomJ <- (gpcpdat[,monJ]-climJ)/sdJ #standardized anomalies
+anomAW <- sqrt(cos(gpcpst[,1]*pi/180))*anomJ #Area weighted anomalies
+svdJ <- svd(anomAW)  #execute SVD
+
+#plot eigenvalues
+par(mar = c(4,4,2,4))
+plot(100*(svdJ$d)^2/sum((svdJ$d)^2), type = "o", ylab = "Percentage of Variance [%]",
+     xlab = "Mode Number", main = "Eigenvalues of Covariance Matrix")
+legend(20,5, col = c("black"),lty = 1,lwd = 2.0,
+       legend = c("Percentage Variance"),bty = "n",
+       text.font = 2,cex = 1.2, text.col = "black")
+par(new = TRUE)
+plot(cumsum(100*(svdJ$d)^2/sum((svdJ$d)^2)),type = "o",
+     col = "blue",lwd = 1.5,axes = FALSE,xlab = "",ylab = "")
+legend(20,50, col = c("blue"),lty = 1,lwd = 2.0,
+       legend = c("Cumulative Variance"),bty = "n",
+       text.font = 2,cex = 1.2, text.col = "blue")
+axis(4)
+mtext("Cumulative Variance [%]",side = 4,line = 2)
+
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 10.7 (EOFs and PCs)
+```{r,fig.width = 8, fig.height = 5.3}
+#plot EOF1: The physical EOF = eigenvector divided by area factor
+mapmat <- matrix(svdJ$u[,1]/sqrt(cos(gpcpst[,1]*pi/180)),nrow = 144)
+rgb.palette = colorRampPalette(c('blue','green','white', 
+                               'yellow','red'),interpolate = 'spline')
+int <- seq(-0.04,0.04,length.out = 61)
+mapmat <- mapmat[, seq(length(mapmat[1,]),1)]
+filled.contour(Lon, Lat, -mapmat, color.palette = rgb.palette, levels = int,
+               plot.title = title(main = "January EOF1 from 1948-2015 NCEP Temp Data",
+               xlab = "Longitude",ylab = "Latitude",cex.lab = 1.2,cex.axis = 1.2),
+               plot.axes = {axis(1); axis(2);map('world2', add = TRUE);grid()},
+               key.title = title(main = "Scale"))
+```
+
+```{r}
+#
+#plot PC1
+pcdat <- svdJ$v[,1]
+Time <- seq(1948,2015)
+plot(Time, -pcdat, type = "o", main = "PC1 of NCEP RA Jan. SAT: 1948-2015",
+     xlab = "Year",ylab = "PC Values",cex.lab = 1.2,cex.axis = 1.2,
+     lwd = 2, ylim = c(-0.3,0.3))
+```
+
+
+<p>&nbsp;</p>
+### Plot Fig. 10.8
+```{r,fig.width = 8, fig.height = 5.3}
+#plot EOF2: The physical EOF =  eigenvector divided by area factor
+mapmat <- matrix(svdJ$u[,2]/sqrt(cos(gpcpst[,1]*pi/180)),nrow = 144)
+rgb.palette <- colorRampPalette(c('blue','green','white', 
+                               'yellow','red'),interpolate = 'spline')
+int <- seq(-0.04,0.04,length.out = 61)
+mapmat <- mapmat[, seq(length(mapmat[1,]),1)]
+filled.contour(Lon, Lat, -mapmat, color.palette = rgb.palette, levels = int,
+               plot.title = title(main = "January EOF2 from 1948-2015 NCEP Temp. Data",
+               xlab = "Longitude",ylab = "Latitude",cex.lab = 1.2,cex.axis = 1.2),
+               plot.axes = {axis(1); axis(2);map('world2', add = TRUE);grid()},
+               key.title = title(main = "Scale"))
+```
+
+```{r}
+#plot PC2
+pcdat <- svdJ$v[,2]
+Time <- seq(1948,2015)
+plot(Time, -pcdat, type = "o", main = "PC2 of NCEP RA Jan. SAT: 1948-2015",
+     xlab = "Year",ylab = "PC Values",cex.lab = 1.2,cex.axis = 1.2,
+     lwd = 2, ylim = c(-0.3,0.3))
+```
+
+
+<p>&nbsp;</p>
+### Plot Fig. 10.9 
+```{r,fig.width = 8, fig.height = 5.3}
+#plot EOF3: The physical EOF = eigenvector divided by area factor
+mapmat <- matrix(svdJ$u[,3]/sqrt(cos(gpcpst[,1]*pi/180)),nrow = 144)
+rgb.palette <- colorRampPalette(c('blue','green','white', 
+                               'yellow','red'),interpolate = 'spline')
+int <- seq(-0.04,0.04,length.out = 61)
+mapmat <- mapmat[, seq(length(mapmat[1,]),1)]
+filled.contour(Lon, Lat, -mapmat, color.palette = rgb.palette, levels = int,
+               plot.title = title(main = "January EOF3 from 1948-2015 NCEP Temp. Data",
+               xlab = "Longitude",ylab = "Latitude", cex.lab  =  1.2,cex.axis = 1.2),
+               plot.axes = {axis(1); axis(2);map('world2', add = TRUE);grid()},
+               key.title = title(main = "Scale"))
+```
+
+```{r}
+#plot PC3
+pcdat <- svdJ$v[,3]
+Time <- seq(1948,2015)
+plot(Time, -pcdat, type = "o", main = "PC3 of NCEP RA Jan. SAT: 1948-2015",
+     xlab = "Year",ylab = "PC Values",cex.lab = 1.2,cex.axis = 1.2,
+     lwd = 2, ylim = c(-0.3,0.3))
+```
+
+
+<p>&nbsp;</p>
+### Plot Fig. 10.10 (EOFs and PCs from de-trended standardized data)
+```{r,fig.width = 8, fig.height = 5.3}
+#EOF from de-trended data
+monJ <- seq(1,816,12)
+gpcpdat <- gpcpst[,3:818]
+gpcpJ <- gpcpdat[,monJ]
+climJ <- rowMeans(gpcpJ)
+library(matrixStats)
+sdJ <- rowSds(gpcpJ)
+anomJ <- (gpcpdat[,monJ]-climJ)/sdJ
+trendM <- matrix(0,nrow = 10512, ncol = 68)#trend field matrix
+trendV <- rep(0,len = 10512)#trend for each grid box: a vector
+for (i in 1:10512) {
+  trendM[i,] <- (lm(anomJ[i,] ~ Time))$fitted.values
+  trendV[i] <- lm(anomJ[i,] ~ Time)$coefficients[2]
+}
+dtanomJ <- anomJ - trendM
+dim(dtanomJ)
+dtanomAW <- sqrt(cos(gpcpst[,1]*pi/180))*dtanomJ
+svdJ <- svd(dtanomAW)
+
+#Plot EOF1
+mapmat <- matrix(svdJ$u[,1]/sqrt(cos(gpcpst[,1]*pi/180)),nrow = 144)
+rgb.palette <- colorRampPalette(c('blue','green','white', 
+                               'yellow','red'),interpolate = 'spline')
+int <- seq(-0.04,0.04,length.out = 61)
+mapmat <- mapmat[, seq(length(mapmat[1,]),1)]
+#par(mar = c(4,4,3,4))
+filled.contour(Lon, Lat, -mapmat, color.palette = rgb.palette, levels = int,
+               plot.title = title(
+               main = "January EOF1 from 1948-2015 NCEP De-Trended\nStandardized Temp. Anomaly Data",
+               xlab = "Longitude",ylab = "Latitude",cex.lab = 1.2,cex.axis = 1.2),
+               plot.axes = {axis(1); axis(2);map('world2', add = TRUE);grid()},
+               key.title = title(main = "Scale"))
+```
+
+```{r}
+#plot PC1
+pcdat <- svdJ$v[,1]
+Time <- seq(1948,2015)
+par(mar = c(4,4,3,0.5))
+plot(Time, -pcdat, type = "o", 
+     main = "PC1 of NCEP RA Jan. SAT: 1948-2015\nDe-Trended Standardized Data",
+     xlab = "Year",ylab = "PC Values",cex.lab = 1.2,cex.axis = 1.2,
+     lwd = 2, ylim = c(-0.3,0.3))
+```
+
+
+<p>&nbsp;</p>
+### Plot Fig. 10.11 (EOF2 and PC2 of de-trended standardized data)
+```{r,fig.width = 8, fig.height = 5.3}
+#Plot EOF2
+mapmat <- matrix(svdJ$u[,2]/sqrt(cos(gpcpst[,1]*pi/180)),nrow = 144)
+rgb.palette <- colorRampPalette(c('blue','green','white', 
+                               'yellow','red'),interpolate = 'spline')
+int <- seq(-0.04,0.04,length.out = 61)
+mapmat <- mapmat[, seq(length(mapmat[1,]),1)]
+#par(mar = c(4,4,3,4))
+filled.contour(Lon, Lat, mapmat, color.palette = rgb.palette, levels = int,
+               plot.title = title(
+               main = "January EOF2 from 1948-2015 NCEP\nDe-Trended Standardized Temp. Anomaly Data",
+               xlab = "Longitude",ylab = "Latitude",cex.lab = 1.2,cex.axis = 1.2),
+               plot.axes = {axis(1); axis(2);map('world2', add = TRUE);grid()},
+               key.title = title(main = "Scale"))
+```
+
+```{r}
+#
+#plot PC2
+pcdat <- svdJ$v[,2]
+Time <- seq(1948,2015)
+par(mar = c(4,4,3,0.5))
+plot(Time, pcdat, type = "o", 
+     main = "PC2 of NCEP RA Jan. SAT: 1948-2016\nDe-Trended Standardized Data",
+     xlab = "Year",ylab = "PC Values",cex.lab = 1.2,cex.axis = 1.2,
+     lwd = 2, ylim = c(-0.3,0.3))
+```
+
+
+<p>&nbsp;</p>
+### Plot Fig. 10.12 (Global average January SAT and its trend)
+```{r}
+#Plot the area-weighted global average Jan temp from 1948-2015
+#Begin from the space-time data matrix gpcpst[,1]
+vArea <- cos(gpcpst[,1]*pi/180)
+anomA <- vArea*anomJ
+dim(anomA)
+JanSAT <- colSums(anomA)/sum(vArea)
+plot(Time, JanSAT, type = "o", lwd = 2,
+     main = "Global Average Jan. SAT Anomalies from NCEP RA",
+     xlab = "Year",ylab = "Temperature [°C]")
+regSAT <- lm(JanSAT ~ Time)
+regSAT
+#0.48°C/100a trend
+abline(regSAT, col = "red", lwd = 4)
+text(1962,0.35,"Linear trend 0.48°C/Century", col = "red", cex = 1.2)
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 10.13 (Temperature trend map)
+```{r}
+#plot the trend of Jan SAT non-standardized anomaly data 
+#Begin with the space-time data matrix
+monJ <- seq(1,816,12)
+gpcpdat <- gpcpst[,3:818]
+gpcpJ <- gpcpdat[,monJ]
+plot(gpcpJ[,23],cex.lab = 1.,cex.axis = 1.)
+climJ <- rowMeans(gpcpJ)
+anomJ <- (gpcpdat[,monJ]-climJ)
+trendV <- rep(0,len = 10512)#trend for each grid box: a vector
+for (i in 1:10512) {
+  trendV[i] <- lm(anomJ[i,] ~ Time)$coefficients[2]
+}
+```
+
+```{r,fig.width = 8, fig.height = 5.3}
+mapmat1 <- matrix(10*trendV,nrow = 144)
+mapv1 <- pmin(mapmat1,1) #Compress the values >5 to 5
+mapmat <- pmax(mapv1,-1) #compress the values <-5 t -5
+rgb.palette <- colorRampPalette(c('blue','green','white', 'yellow','red'),
+                             interpolate = 'spline')
+int <- seq(-1,1,length.out = 61)
+mapmat <- mapmat[, seq(length(mapmat[1,]),1)]
+#par(mar = c(4,4,2,4))
+par(mgp = c(2,1,0), cex.lab = 1.2, cex.axis = 1.2)
+filled.contour(Lon, Lat, mapmat, color.palette = rgb.palette, levels = int,
+               plot.title = title(main = "Trend of the NCEP RA1 Jan 1948-2015 Temp. Anomaly",
+               xlab = "Longitude",ylab = "Latitude"),cex.lab = 1.2,cex.axis = 1.2,
+               plot.axes = {axis(1); axis(2);map('world2', add = TRUE);grid()},
+               key.title = title(main = "°C/10a"))
+```
+
+
+<p>&nbsp;</p>
+### Plot Fig. 10.14 (GPCP precipitation from 90S to 90N)
+```{r}
+#Download the GPCP data from the ESRL website
+#https://www.esrl.noaa.gov/psd/data/gridded/data.gpcp.html
+#Select the monthly precipitation data by clicking 
+#the Download File: precip.mon.mean.nc
+#Move the data file to your assigned working directory 
+#/Users/sshen/climmath/data
+setwd("~/sshen/climmath")
+#install.packages("ncdf")
+library(ncdf4)
+# 4 dimensions: lon,lat,level,time
+nc <- ncdf4::nc_open("data/precip.mon.mean.nc")
+#nc
+nc$dim$lon$vals
+nc$dim$lat$vals
+nc$dim$time$vals
+#nc$dim$time$units
+#nc$dim$level$vals
+Lon <- ncvar_get(nc, "lon")
+Lat <- ncvar_get(nc, "lat")
+Time <- ncvar_get(nc, "time")
+head(Time)
+#[1] 65378 65409 65437 65468 65498 65529
+library(chron)
+month.day.year(65378,c(month = 1, day = 1, year = 1800))
+#1979-01-01
+precnc <- ncvar_get(nc, "precip")
+dim(precnc)
+#[1] 144  72 451 #2.5-by-2.5, 451 months from Jan 1979-July 2016
+#plot a 90S-90N precip along a meridional line at 160E
+par(mar = c(4.5,4.5,2,0.5))
+plot(seq(-90,90,length = 72), precnc[64,,1], type = "l", lwd = 2,
+     xlab = "Latitude", ylab = "Precipitation [mm/day]",
+     main = "90°S-90°N Precipitation Along the Meridian at 160°E: Jan. 1979",
+     cex.lab = 1.2, cex.axis = 1.2)
+```
+
+<p>&nbsp;</p>
+### Plot Fig. 10.15 (GPCP climatology and standard deviation maps)
+```{r,fig.width = 8, fig.height = 5.3}
+#Write the data as space-time matrix with a header
+precst <- matrix(0,nrow = 10368,ncol = 451)
+temp <- as.vector(precnc[,,1])
+head(temp)
+for (i in 1:451) {precst[,i] <- as.vector(precnc[ , , i])}
+#precst is the space-time GPCP data 
+LAT <- rep(Lat, 144)
+LON <- rep(Lon[1],72)
+for (i in 2:144){LON <- c(LON, rep(Lon[i],72))}
+gpcpst <- cbind(LAT, LON, precst)
+
+#Convert the Julian day into calender dates for time 
+tm <- month.day.year(Time, c(month = 1, day = 1, year = 1800))
+tm1 <- paste(tm$year,"-",tm$month)
+#tm1 <- data.frame(tm1)
+tm2 <- c("Lat","Lon",tm1)
+colnames(gpcpst) <- tm2
+#Look at a sample section of the space-time data 
+gpcpst[890:892,1:5]
+#        Lat   Lon   1979 - 1  1979 - 2  1979 - 3
+#[1,] -26.25 31.25 0.05752099 0.1805309 0.2104454
+#[2,] -23.75 31.25 0.10855579 0.2562788 0.2883888
+#[3,] -21.25 31.25 0.08718992 0.2738046 0.2569866
+write.csv(gpcpst,file = "gpcp9716jul.csv")
+#
+#Compute and plot the GPCP climatology from Jan 1979-July 2016
+library(maps)
+climmat <- precnc[,,1]
+for(i in 2:451){climmat <- climmat + precnc[,,i]}
+climmat <- climmat/451
+mapmat <- climmat
+mapmat <- pmax(pmin(mapmat,10),0)
+int <- seq(min(mapmat),max(mapmat),length.out = 11)
+rgb.palette <- colorRampPalette(c('bisque2','cyan', 'green', 'yellow',
+                               'pink','indianred2', 'red','maroon','black'),
+                             interpolate = 'spline')
+#plot.new()
+#par(mar = c(4, 4.5, 2, 1))
+filled.contour(Lon, Lat, mapmat, color.palette = rgb.palette, levels = int,
+               plot.title = title(main = "GPCP 1979-2016 Precipitation Climatology [mm/day]",
+                                xlab = "Longitude",ylab = "Latitude", cex.lab = 1.2),
+               plot.axes = {axis(1,seq(0,360, by = 30), cex.axis = 1.2); 
+                 axis(2, seq(-90,90,by = 30), cex.axis = 1.2);
+                 map('world2', add = TRUE);grid()},
+               key.title = title(main = "mm/day"),
+               key.axes = {axis(4, seq(0,10, len = 11), cex.axis = 1.2)})
+
+#Compute and plot standard deviation from Jan 1979-July 2016
+sdmat <- (precnc[,,1]-climmat)^2
+for(i in 2:451){sdmat <- sdmat + (precnc[,,i]-climmat)^2}
+sdmat <- sqrt(sdmat/451)
+mapmat <- sdmat
+mapmat <- pmax(pmin(mapmat,5),0)
+int <- seq(min(mapmat),max(mapmat),length.out = 21)
+rgb.palette <- colorRampPalette(c('bisque2','cyan', 'green', 'yellow','pink',
+                               'indianred2', 'red','maroon','black'),
+                             interpolate = 'spline')
+#plot.new()
+#par(mar = c(4.5, 4.5, 3, 1))
+filled.contour(Lon, Lat, mapmat, color.palette = rgb.palette, levels = int,
+               plot.title = title(
+               main = "GPCP 1979-2016 Standard Deviation of\nPrecipitation [mm/day]",
+               xlab = "Longitude",ylab = "Latitude", cex.lab = 1.2),
+               plot.axes = {axis(1,seq(0,360, by = 30), cex.axis = 1.2); 
+               axis(2,seq(-90,90,by = 30), cex.axis = 1.2);
+               map('world2', add = TRUE);grid()},
+               key.title = title(main = "mm/day"),
+               key.axes = {axis(4, seq(0,5,len = 11), cex.axis = 1.2)})
+
+#Compute the January precipitation climatology and plot its map
+Jmon <- seq(3,453,by = 12)
+Jclim <- rowMeans(gpcpst[,Jmon])
+mapmat <- matrix(Jclim,nrow = 144)
+mapmat <- pmax(pmin(mapmat,10),0)
+int <- seq(min(mapmat),max(mapmat),length.out = 11)
+rgb.palette <- colorRampPalette(c('bisque2','cyan', 'green', 'yellow','pink','indianred2','red','maroon','black'), interpolate = 'spline')
+#plot.new()
+#par(mar = c(4, 4.5, 2, 1))
+filled.contour(Lon, Lat, mapmat, color.palette = rgb.palette, levels = int,
+               plot.title = title(main = "GPCP 1979-2016 Precipitation Jan. Climatology [mm/day]",
+               xlab = "Longitude",ylab = "Latitude", cex.lab = 1.2),
+               plot.axes = {axis(1,seq(0,360, by = 30), cex.axis = 1.2); 
+               axis(2, seq(-90,90,by = 30), cex.axis = 1.2);
+               map('world2', add = TRUE);grid()},
+               key.title = title(main = "mm/day"),
+               key.axes = {axis(4, seq(0,10, len = 11), cex.axis = 1.2)})
+```
