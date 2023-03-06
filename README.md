@@ -3,4 +3,4 @@ Updated and Proofread Python and R Codes for <i>Climate Mathematics: Theory and 
 
 [RPubs files for the R Codes](https://rpubs.com/joaquinstawsky/)
 
-*Make sure to download the chapters that say explicitly Climate Mathematics!*
+*Make sure to download the chapters that explicitly say Climate Mathematics!*
